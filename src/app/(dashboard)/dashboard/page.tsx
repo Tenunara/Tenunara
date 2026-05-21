@@ -1,19 +1,32 @@
-"use client"
+"use client";
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
+import { UmkmDashboard } from "@/components/dashboard/umkm-dashboard";
+import { PengrajinDashboard } from "@/components/dashboard/pengrajin-dashboard";
+import type { UserRole } from "@/lib/types";
 
 export default function DashboardPage() {
-  const router = useRouter()
+  const [role, setRole] = useState<UserRole | null>(null);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    const role = localStorage.getItem("sb-user-role")
-    if (role === "umkm") {
-      router.push("/dashboard/listings")
-    } else {
-      router.push("/dashboard/browse")
-    }
-  }, [router])
+    const storedRole = localStorage.getItem("sb-user-role") as UserRole | null;
+    setRole(storedRole);
+    setChecking(false);
+  }, []);
 
-  return null
+  if (checking) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-tenunara-terracotta" />
+      </div>
+    );
+  }
+
+  if (role === "umkm" || role === "seller") {
+    return <UmkmDashboard />;
+  }
+
+  return <PengrajinDashboard />;
 }
