@@ -2,14 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  Check,
-  Camera,
-  FileText,
-  Loader2,
-  Info,
-} from "lucide-react";
+import { ArrowLeft, Check, Camera, FileText, Loader2 } from "lucide-react";
 import { ImageUploader } from "@/components/listing/image-uploader";
 import { AIResultDisplay } from "@/components/listing/ai-result-display";
 import { Button } from "@/components/ui/button";
@@ -29,11 +22,8 @@ import {
   createProduct,
   analyzeProductImages,
 } from "@/lib/api";
-import {
-  PRODUCTION_SOURCE_LABEL,
-  HYGIENE_STATUS_LABEL,
-  AI_SIZE_RANGE_LABEL,
-} from "@/lib/constants";
+import { PRODUCTION_SOURCE_LABEL, HYGIENE_STATUS_LABEL } from "@/lib/constants";
+import { gradeProduct } from "@/lib/grading-engine";
 import type {
   FabricType,
   AIAnalysisResult,
@@ -67,9 +57,21 @@ export default function NewListingPage() {
   const [totalWeightKg, setTotalWeightKg] = useState("");
   const [estimatedPieces, setEstimatedPieces] = useState("");
   const [pricePerKg, setPricePerKg] = useState("");
-  const [isNegotiable, setIsNegotiable] = useState(false);
   const [minimumOrderKg, setMinimumOrderKg] = useState("");
   const [notes, setNotes] = useState("");
+
+  // AI auto-filled fields (editable)
+  const [aiColor, setAiColor] = useState("");
+  const [aiPattern, setAiPattern] = useState("");
+  const [aiDimensions, setAiDimensions] = useState("");
+
+  const [showGradeModal, setShowGradeModal] = useState(false);
+  const [gradePreview, setGradePreview] = useState<{
+    final_grade: string;
+    is_grade_overridden: boolean;
+    reasons: string[];
+  } | null>(null);
+
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const stepIndex = STEPS.findIndex((s) => s.key === step);
@@ -86,7 +88,7 @@ export default function NewListingPage() {
     setAnalysisError(null);
 
     try {
-      const result = await analyzeProductImages(base64Array.length);
+      const result = await analyzeProductImages(base64Array);
       setAiResult(result);
       setAnalysisLoading(false);
       setStep("review");
@@ -100,6 +102,11 @@ export default function NewListingPage() {
   }, []);
 
   const handleConfirmAI = () => {
+    if (aiResult) {
+      setAiColor(aiResult.ai_dominant_color || "");
+      setAiPattern(aiResult.ai_pattern || "");
+      setAiDimensions(aiResult.ai_size_range || "");
+    }
     setStep("form");
   };
 
@@ -124,11 +131,50 @@ export default function NewListingPage() {
     return Object.keys(errs).length === 0;
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!validate()) return;
 
+    // Compute grade preview using the same rules as backend
+    const finalAiResult = aiResult
+      ? {
+          ...aiResult,
+          ai_dominant_color: aiColor || aiResult.ai_dominant_color,
+          ai_pattern: (aiPattern ||
+            aiResult.ai_pattern) as AIAnalysisResult["ai_pattern"],
+          ai_size_range: aiDimensions || aiResult.ai_size_range,
+        }
+      : undefined;
+
+    const gradingInput = {
+      ai_size_range: aiDimensions || aiResult?.ai_size_range || "",
+      defects: aiResult?.defects || [],
+      hygiene_status: hygieneStatus,
+      has_odor: hasOdor,
+    };
+    const result = gradeProduct(gradingInput);
+    setGradePreview({
+      final_grade: result.final_grade,
+      is_grade_overridden: result.is_grade_overridden,
+      reasons: result.reasons,
+    });
+    setShowGradeModal(true);
+  };
+
+  const handleConfirmPublish = async () => {
+    setShowGradeModal(false);
     setIsSubmitting(true);
+
     try {
+      const finalAiResult = aiResult
+        ? {
+            ...aiResult,
+            ai_dominant_color: aiColor || aiResult.ai_dominant_color,
+            ai_pattern: (aiPattern ||
+              aiResult.ai_pattern) as AIAnalysisResult["ai_pattern"],
+            ai_size_range: aiDimensions || aiResult.ai_size_range,
+          }
+        : undefined;
+
       const payload: CreateProductRequest & { ai_result?: AIAnalysisResult } = {
         fabric_type_id: Number(fabricTypeId),
         production_source:
@@ -137,14 +183,13 @@ export default function NewListingPage() {
         has_odor: hasOdor,
         total_weight_kg: Number(totalWeightKg),
         price_per_kg: Number(pricePerKg),
-        is_negotiable: isNegotiable,
         images_base64: imagesBase64,
         status: "published",
         ...(fiberComposition && { fiber_composition: fiberComposition }),
         ...(estimatedPieces && { estimated_pieces: Number(estimatedPieces) }),
         ...(minimumOrderKg && { minimum_order_kg: Number(minimumOrderKg) }),
         ...(notes && { notes }),
-        ...(aiResult && { ai_result: aiResult }),
+        ...(finalAiResult && { ai_result: finalAiResult }),
       };
 
       await createProduct(payload);
@@ -156,6 +201,11 @@ export default function NewListingPage() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleCancelPublish = () => {
+    setShowGradeModal(false);
+    setGradePreview(null);
   };
 
   const handleBack = () => {
@@ -393,25 +443,59 @@ export default function NewListingPage() {
                 )}
               </div>
 
-              {/* AI Info (if available) */}
+              {/* AI Auto-filled Fields (editable) */}
               {aiResult && (
-                <div className="rounded-xl bg-tenunara-mint/30 p-4">
-                  <div className="flex items-start gap-2">
-                    <Info className="mt-0.5 h-4 w-4 shrink-0 text-tenunara-terracotta" />
-                    <div className="space-y-1 text-sm">
-                      <p className="font-medium text-tenunara-charcoal">
-                        Hasil Analisis AI
-                      </p>
-                      <p className="text-tenunara-teal">
-                        Warna:{" "}
-                        {aiResult.ai_dominant_color?.split(";")[1] || "-"} |
-                        Ukuran:{" "}
-                        {AI_SIZE_RANGE_LABEL[aiResult.ai_size_range] || "-"} |
-                        Grade: {aiResult.ai_suggested_grade}
-                      </p>
-                    </div>
+                <>
+                  {/* Color */}
+                  <div className="space-y-2">
+                    <Label htmlFor="aiColor">
+                      Warna Dominan <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="aiColor"
+                      placeholder="#HEX;Nama Warna — Contoh: #000080;Navy"
+                      value={aiColor}
+                      onChange={(e) => setAiColor(e.target.value)}
+                    />
                   </div>
-                </div>
+
+                  {/* Pattern */}
+                  <div className="space-y-2">
+                    <Label htmlFor="aiPattern">
+                      Pola Kain <span className="text-destructive">*</span>
+                    </Label>
+                    <Select
+                      value={aiPattern}
+                      onValueChange={(v) => v && setAiPattern(v)}
+                    >
+                      <SelectTrigger className="w-full bg-white">
+                        <SelectValue placeholder="Pilih pola kain" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="polos">Polos</SelectItem>
+                        <SelectItem value="motif">Motif</SelectItem>
+                        <SelectItem value="batik">Batik</SelectItem>
+                        <SelectItem value="stripes">Stripes</SelectItem>
+                        <SelectItem value="checked">Checked</SelectItem>
+                        <SelectItem value="other">Lainnya</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Dimensions */}
+                  <div className="space-y-2">
+                    <Label htmlFor="aiDimensions">
+                      Estimasi Dimensi{" "}
+                      <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="aiDimensions"
+                      placeholder="lebar x panjang — Contoh: 40cm x 60cm"
+                      value={aiDimensions}
+                      onChange={(e) => setAiDimensions(e.target.value)}
+                    />
+                  </div>
+                </>
               )}
 
               {/* Has Odor checkbox */}
@@ -485,19 +569,6 @@ export default function NewListingPage() {
                 )}
               </div>
 
-              {/* Is Negotiable checkbox */}
-              <label className="flex items-center gap-3 rounded-xl border border-border px-4 py-3">
-                <input
-                  type="checkbox"
-                  checked={isNegotiable}
-                  onChange={(e) => setIsNegotiable(e.target.checked)}
-                  className="h-4 w-4 rounded border-tenunara-teal text-tenunara-terracotta focus:ring-tenunara-terracotta"
-                />
-                <span className="text-sm text-tenunara-charcoal">
-                  Harga bisa nego
-                </span>
-              </label>
-
               {/* Minimum Order */}
               <div className="space-y-2">
                 <Label htmlFor="minimumOrder">
@@ -542,6 +613,77 @@ export default function NewListingPage() {
                   <p className="text-sm font-medium text-destructive">
                     {errors.submit}
                   </p>
+                </div>
+              )}
+
+              {/* Grading confirmation modal */}
+              {showGradeModal && gradePreview && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+                  <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
+                    <h3 className="text-lg font-bold text-tenunara-charcoal">Konfirmasi Grade</h3>
+
+                    {/* AI suggested grade vs final grade */}
+                    {aiResult && (
+                      <div className="mt-3 grid grid-cols-2 gap-3">
+                        <div className="rounded-xl bg-tenunara-mint/30 p-3 text-center">
+                          <p className="text-xs text-tenunara-teal">Saran AI</p>
+                          <p className="mt-1 text-2xl font-bold text-tenunara-charcoal">
+                            {aiResult.ai_suggested_grade || "-"}
+                          </p>
+                        </div>
+                        <div className="rounded-xl bg-tenunara-terracotta/10 p-3 text-center">
+                          <p className="text-xs text-tenunara-teal">Final Grade</p>
+                          <p className="mt-1 text-2xl font-bold text-tenunara-terracotta">
+                            {gradePreview.final_grade}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Override notice */}
+                    {gradePreview.is_grade_overridden && aiResult && (
+                      <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
+                        <p className="text-xs font-semibold text-amber-700">
+                          Grade diubah oleh sistem
+                        </p>
+                        <p className="mt-1 text-xs text-amber-600">
+                          AI menyarankan Grade {aiResult.ai_suggested_grade}, tetapi berdasarkan aturan grading, kain ini masuk Grade {gradePreview.final_grade}.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Reasons */}
+                    {gradePreview.reasons.length > 0 && (
+                      <div className="mt-3 space-y-1">
+                        <p className="text-xs font-medium text-tenunara-teal">Alasan:</p>
+                        <ul className="space-y-1">
+                          {gradePreview.reasons.map((r, i) => (
+                            <li key={i} className="flex items-start gap-2 text-xs text-tenunara-charcoal">
+                              <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-tenunara-terracotta" />
+                              {r}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="mt-5 flex gap-3">
+                      <button
+                        onClick={handleCancelPublish}
+                        className="flex-1 rounded-xl border border-tenunara-teal/20 px-4 py-2.5 text-sm font-medium text-tenunara-teal transition-colors duration-200 hover:bg-tenunara-teal/5"
+                      >
+                        Batal
+                      </button>
+                      <button
+                        onClick={handleConfirmPublish}
+                        disabled={isSubmitting}
+                        className="flex-1 rounded-xl bg-tenunara-terracotta px-4 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-tenunara-terracotta/90 disabled:opacity-50"
+                      >
+                        {isSubmitting ? "Mempublikasikan..." : "Publikasikan"}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
 

@@ -2,6 +2,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { jsonResponse, errorResponse } from "@/lib/api-response";
 import { getAuthenticatedUser, AuthError } from "@/lib/api-auth";
 import type { CreateProductRequest, ProductStatus, AIAnalysisResult } from "@/lib/types";
+import { gradeProduct } from "@/lib/grading-engine";
 
 export async function GET(request: Request) {
   try {
@@ -97,7 +98,6 @@ export async function POST(request: Request) {
     const ai_result = body.ai_result;
     const now = ai_result?.ai_processed_at || new Date().toISOString();
     const suggestedGrade = ai_result?.ai_suggested_grade || null;
-    const finalGrade = body.final_grade || suggestedGrade;
 
     const { data: product, error: createError } = await supabaseAdmin
       .from("products")
@@ -123,8 +123,8 @@ export async function POST(request: Request) {
         ai_reasoning: ai_result?.ai_reasoning || null,
         ai_model_version: ai_result?.ai_model_version || null,
         ai_processed_at: now,
-        final_grade: finalGrade,
-        is_grade_overridden: body.final_grade !== undefined && body.final_grade !== suggestedGrade,
+        final_grade: null,
+        is_grade_overridden: false,
         status: body.status || "draft",
       })
       .select()
@@ -175,8 +175,31 @@ export async function POST(request: Request) {
       await supabaseAdmin.from("product_defect_details").insert(defects);
     }
 
+    // 5. Run grading engine to determine final_grade
+    const gradingResult = gradeProduct({
+      ai_size_range: ai_result?.ai_size_range || "",
+      defects: ai_result?.defects || [],
+      hygiene_status: body.hygiene_status,
+      has_odor: body.has_odor ?? false,
+    });
+
+    await supabaseAdmin
+      .from("products")
+      .update({
+        final_grade: gradingResult.final_grade,
+        is_grade_overridden: gradingResult.is_grade_overridden,
+      })
+      .eq("id", product.id);
+
     return jsonResponse(
-      { data: { ...product, images_url: imageUrls } },
+      {
+        data: { ...product, images_url: imageUrls },
+        grading: {
+          final_grade: gradingResult.final_grade,
+          is_grade_overridden: gradingResult.is_grade_overridden,
+          reasons: gradingResult.reasons,
+        },
+      },
       201,
     );
   } catch (err) {

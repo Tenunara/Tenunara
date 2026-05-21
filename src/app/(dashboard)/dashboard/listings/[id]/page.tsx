@@ -409,14 +409,7 @@ export default function ListingDetailPage() {
               <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
                 <Spec label="Jenis Kain" value={product.fabric_name || "-"} />
                 <Spec label="Warna Dominan" value={colorName} />
-                <Spec
-                  label="Ukuran"
-                  value={
-                    AI_SIZE_RANGE_LABEL[product.ai_size_range ?? ""] ||
-                    product.ai_size_range ||
-                    "-"
-                  }
-                />
+                <Spec label="Dimensi" value={product.ai_size_range || "-"} />
                 <Spec label="Grade" value={`Grade ${grade}`} />
                 <Spec
                   label="Sumber"

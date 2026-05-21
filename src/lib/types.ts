@@ -224,7 +224,7 @@ export interface ProductRow {
   notes: string | null
   ai_dominant_color: string | null
   ai_pattern: AiPattern | null
-  ai_size_range: AiSizeRange | null
+  ai_size_range: string | null
   ai_confidence_score: number | null
   ai_suggested_grade: Grade | null
   ai_reasoning: string | null
@@ -294,7 +294,7 @@ export interface AIAnalysisResult {
   images_url: string[]
   ai_dominant_color: string
   ai_pattern: AiPattern
-  ai_size_range: AiSizeRange
+  ai_size_range: string
   ai_confidence_score: number
   ai_suggested_grade: Grade
   ai_reasoning: string

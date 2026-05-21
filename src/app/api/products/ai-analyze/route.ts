@@ -1,139 +1,146 @@
 import { jsonResponse, errorResponse } from "@/lib/api-response";
-import type { AiPattern, AiSizeRange, DefectType, Grade } from "@/lib/types";
+import type { AiPattern, DefectType, Grade } from "@/lib/types";
+import { GoogleGenAI, Type } from "@google/genai";
 
-const COLORS: { name: string; hex: string }[] = [
-  { name: "Navy", hex: "#000080" },
-  { name: "Hitam", hex: "#000000" },
-  { name: "Putih", hex: "#FFFFFF" },
-  { name: "Abu-abu", hex: "#808080" },
-  { name: "Biru", hex: "#0000FF" },
-  { name: "Merah", hex: "#FF0000" },
-  { name: "Hijau", hex: "#008000" },
-  { name: "Kuning", hex: "#FFFF00" },
-  { name: "Coklat", hex: "#8B4513" },
-  { name: "Maroon", hex: "#800000" },
-  { name: "Biru Dongker", hex: "#00008B" },
-  { name: "Krem", hex: "#FFFDD0" },
-];
+// Initialize the Gemini client
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-const PATTERNS: AiPattern[] = ["polos", "motif", "batik", "stripes", "checked", "other"];
-const SIZE_RANGES: AiSizeRange[] = ["lt15cm", "15-30cm", "30-50cm", "gt50cm"];
-const GRADES: Grade[] = ["A", "B", "C"];
-const DEFECT_TYPES: { type: DefectType; weight: number }[] = [
-  { type: "noda", weight: 0.35 },
-  { type: "sobek", weight: 0.15 },
-  { type: "lubang", weight: 0.20 },
-  { type: "warna_pudar", weight: 0.20 },
-  { type: "cacat_tenun", weight: 0.10 },
-];
-
-function pickRandom<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function seededRandom(seed: number): () => number {
-  let s = seed;
-  return () => {
-    s = (s * 1103515245 + 12345) & 0x7fffffff;
-    return s / 0x7fffffff;
-  };
-}
-
-function generateReasoning(grade: Grade, defects: { defect_type: string; defect_percentage: number }[]): string {
-  const totalDefectArea = defects.reduce((sum, d) => sum + d.defect_percentage, 0);
-  const parts: string[] = [];
-
-  if (totalDefectArea < 3) {
-    parts.push("Kondisi kain sangat baik dengan area cacat minimal.");
-  } else if (totalDefectArea < 8) {
-    parts.push("Kondisi kain cukup baik dengan beberapa area cacat minor.");
-  } else {
-    parts.push("Terdapat area cacat yang cukup signifikan pada kain.");
-  }
-
-  if (defects.length > 0) {
-    const mainDefect = defects[0];
-    const defectLabels: Record<string, string> = {
-      noda: "noda yang dapat dibersihkan",
-      sobek: "sobekan pada permukaan kain",
-      lubang: "lubang kecil pada beberapa bagian",
-      warna_pudar: "warna yang mulai pudar",
-      cacat_tenun: "cacat pada proses penenunan",
-    };
-    parts.push(`Cacat dominan: ${defectLabels[mainDefect.defect_type] || mainDefect.defect_type} (${mainDefect.defect_percentage}% area).`);
-  }
-
-  const reasonMap: Record<Grade, string> = {
-    A: "Kualitas grade A: kain layak pakai langsung tanpa perbaikan berarti, cocok untuk produk jadi premium.",
-    B: "Kualitas grade B: kain masih layak pakai dengan sedikit pemrosesan ulang, cocok untuk produk medium.",
-    C: "Kualitas grade C: kain memerlukan pemrosesan ulang signifikan, cocok untuk produk daur ulang atau bahan baku turunan.",
-  };
-  parts.push(reasonMap[grade]);
-
-  return parts.join(" ");
-}
-
-function simulateAnalysis(imageCount: number) {
-  const rand = seededRandom(Date.now() % 100000);
-
-  const color = pickRandom(COLORS);
-  const pattern = pickRandom(PATTERNS);
-  const sizeRange = pickRandom(SIZE_RANGES);
-  const confidenceScore = Math.round((0.72 + rand() * 0.25) * 100) / 100;
-  const suggestedGrade = rand() > 0.6 ? "A" : rand() > 0.3 ? "B" : "C";
-
-  // Generate 1-3 defects
-  const defectCount = Math.min(imageCount, 1 + Math.floor(rand() * 3));
-  const shuffledDefects = [...DEFECT_TYPES].sort(() => rand() - 0.5);
-  const usedTypes = new Set<string>();
-
-  const defects = [];
-  for (const def of shuffledDefects) {
-    if (defects.length >= defectCount) break;
-    if (usedTypes.has(def.type)) continue;
-    usedTypes.add(def.type);
-
-    defects.push({
-      defect_type: def.type,
-      defect_percentage: Math.round((rand() * 8 + 0.5) * 100) / 100,
-      confidence_score: Math.round((0.75 + rand() * 0.22) * 100) / 100,
-    });
-  }
-
-  const reasoning = generateReasoning(suggestedGrade, defects);
-
-  return {
-    ai_dominant_color: `${color.hex};${color.name}`,
-    ai_pattern: pattern,
-    ai_size_range: sizeRange,
-    ai_confidence_score: confidenceScore,
-    ai_suggested_grade: suggestedGrade,
-    ai_reasoning: reasoning,
-    ai_model_version: "v1.0-grading",
-    ai_processed_at: new Date().toISOString(),
-    defects,
-  };
-}
+// Define the response schema to force Gemini to return your exact expected data structure
+const analysisSchema = {
+  type: Type.OBJECT,
+  properties: {
+    ai_dominant_color: {
+      type: Type.STRING,
+      description:
+        "Format format must be: '#HEXCODE;Color Name' based on the dominant color found in the fabric.",
+    },
+    ai_pattern: {
+      type: Type.STRING,
+      enum: ["polos", "motif", "batik", "stripes", "checked", "other"],
+    },
+    ai_size_range: {
+      type: Type.STRING,
+      description:
+        "Estimated fabric dimensions as 'width x length' in cm, e.g. '40cm x 60cm'. Use the A4 paper (21cm x 29.7cm) visible in the photo as a size reference to estimate actual dimensions.",
+    },
+    ai_confidence_score: {
+      type: Type.NUMBER,
+      description: "Overall analysis confidence score between 0.0 and 1.0",
+    },
+    ai_suggested_grade: { type: Type.STRING, enum: ["A", "B", "C"] },
+    ai_reasoning: {
+      type: Type.STRING,
+      description:
+        "Detailed explanation in Indonesian analyzing the condition, defects, and why this grade was assigned.",
+    },
+    defects: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          defect_type: {
+            type: Type.STRING,
+            enum: ["noda", "sobek", "lubang", "warna_pudar", "cacat_tenun"],
+          },
+          defect_percentage: {
+            type: Type.NUMBER,
+            description:
+              "Estimated surface area percentage of this specific defect (0.0 to 100.0)",
+          },
+          confidence_score: {
+            type: Type.NUMBER,
+            description:
+              "Confidence score for this specific defect detection (0.0 to 1.0)",
+          },
+        },
+        required: ["defect_type", "defect_percentage", "confidence_score"],
+      },
+    },
+  },
+  required: [
+    "ai_dominant_color",
+    "ai_pattern",
+    "ai_size_range",
+    "ai_confidence_score",
+    "ai_suggested_grade",
+    "ai_reasoning",
+    "defects",
+  ],
+};
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { image_count } = body as { image_count?: number };
+    // To use real AI, your frontend must send the image data (e.g., base64 data URLs)
+    const { images } = body as { images?: string[] };
 
-    const count = image_count || 1;
-    if (count < 1 || count > 5) {
-      return errorResponse("Jumlah gambar harus antara 1-5", 400);
+    if (!images || images.length === 0) {
+      return errorResponse(
+        "Harus menyertakan setidaknya 1 gambar fabric untuk dianalisis.",
+        400,
+      );
+    }
+    if (images.length > 5) {
+      return errorResponse("Maksimal 5 gambar yang diizinkan sekaligus.", 400);
     }
 
-    // Simulate AI processing delay
-    await new Promise((r) => setTimeout(r, 500 + Math.random() * 500));
+    // Convert base64 strings data URLs into the format Gemini's SDK expects
+    const mediaParts = images.map((base64DataUrl) => {
+      const match = base64DataUrl.match(/^data:(image\/\w+);base64,(.+)$/);
+      if (!match)
+        throw new Error(
+          "Format gambar tidak valid. Harus berupa base64 data URL.",
+        );
+      return {
+        inlineData: {
+          mimeType: match[1],
+          data: match[2],
+        },
+      };
+    });
 
-    const result = simulateAnalysis(count);
+    const prompt = `
+      Anda adalah pakar quality control tekstil AI. Analisis gambar kain (fabric) yang disediakan.
+      Identifikasi:
+      1. Warna dominan terdekat (berikan HEX dan nama warnanya).
+      2. Pola/Pattern kain.
+      3. Estimasi dimensi kain dalam format "lebar x panjang" (contoh: "40cm x 60cm"). Jika ada kertas A4 (21cm x 29.7cm) di foto, gunakan sebagai referensi ukuran. Jika tidak ada referensi, estimasi berdasarkan konteks umum tekstil.
+      4. Cari kecacatan (defects) seperti noda (stain), sobek (tear), lubang (hole), warna pudar (fading), atau cacat tenun (weaving defects).
+      5. Berikan saran Grade (A/B/C) beserta alasan logisnya dalam Bahasa Indonesia.
 
-    return jsonResponse(result);
+      PENTING untuk ai_size_range: kembalikan dalam format "Lebar x Panjang" dengan satuan cm, contoh: "25cm x 35cm" atau "12cm x 18cm".
+    `;
+
+    // Call Gemini 2.5 Flash
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [...mediaParts, prompt],
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: analysisSchema,
+        temperature: 0.2, // Low temperature for consistent grading evaluations
+      },
+    });
+
+    const responseText = response.text;
+    if (!responseText) {
+      throw new Error("AI gagal mengembalikan hasil analisis.");
+    }
+
+    // Parse the strictly validated JSON string from Gemini
+    const aiResult = JSON.parse(responseText);
+
+    // Append metadata before responding
+    const finalResult = {
+      ...aiResult,
+      ai_model_version: "gemini-2.5-flash-v1",
+      ai_processed_at: new Date().toISOString(),
+    };
+
+    return jsonResponse(finalResult);
   } catch (err) {
     return errorResponse(
-      "Gagal menganalisis gambar",
+      "Gagal menganalisis gambar dengan AI",
       500,
       err instanceof Error ? err.message : "Unknown error",
     );

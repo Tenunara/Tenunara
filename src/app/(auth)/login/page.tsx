@@ -167,7 +167,7 @@ function LoginForm() {
               Demo Pengrajin
             </span>
             <span className="text-[10px] text-tenunara-teal/60">
-              pengerajin@email.com
+              pengrajin@email.com
             </span>
           </button>
         </div>

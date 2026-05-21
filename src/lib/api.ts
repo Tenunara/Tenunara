@@ -266,11 +266,11 @@ export async function deleteProduct(id: string): Promise<void> {
 }
 
 export async function analyzeProductImages(
-  imageCount: number,
+  images: string[],
 ): Promise<AIAnalysisResult> {
   const res = await fetchJson<AIAnalysisResult>("/api/products/ai-analyze", {
     method: "POST",
-    body: JSON.stringify({ image_count: imageCount }),
+    body: JSON.stringify({ images }),
   });
   return res;
 }
