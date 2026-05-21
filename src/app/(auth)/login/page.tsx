@@ -2,17 +2,18 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-
-// TODO: Replace alerts with toast notifications (sonner)
-// import { toast } from "sonner"
+import { toast } from "sonner"
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirect = searchParams.get("redirect") || "/dashboard"
+
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -25,29 +26,72 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      // TODO: Replace with real Supabase signInWithPassword
-      // const { error } = await supabase.auth.signInWithPassword({ email, password })
-      // if (error) throw error
-      // router.push('/dashboard')
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      })
 
-      // Mock login: simulate delay then redirect
-      await new Promise((r) => setTimeout(r, 800))
-      router.push("/dashboard")
-    } catch {
-      setError("Email atau password salah")
-      // toast.error("Email atau password salah")
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || "Gagal masuk")
+      }
+
+      // Store access token for Bearer auth
+      localStorage.setItem("sb-access-token", data.session.access_token)
+      localStorage.setItem("sb-refresh-token", data.session.refresh_token)
+      localStorage.setItem("sb-user-role", data.user.role)
+      localStorage.setItem("sb-user-id", data.user.id)
+
+      toast.success("Berhasil masuk")
+      router.push(redirect)
+      router.refresh()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Terjadi kesalahan"
+      setError(message)
     } finally {
       setLoading(false)
     }
   }
 
-  const handleDemoLogin = async (role: "seller" | "buyer") => {
+  const handleDemoLogin = async (role: "pengrajin" | "umkm") => {
     setLoading(true)
     setError(null)
 
-    // TODO: Replace with actual demo credentials from Supabase or env
-    await new Promise((r) => setTimeout(r, 500))
-    router.push("/dashboard")
+    const demoAccounts: Record<string, { email: string; password: string }> = {
+      pengrajin: { email: "pengrajin@tenunara.demo", password: "demo1234" },
+      umkm: { email: "umkm@tenunara.demo", password: "demo1234" },
+    }
+
+    try {
+      const demo = demoAccounts[role]
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(demo),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.error || "Gagal login demo")
+      }
+
+      localStorage.setItem("sb-access-token", data.session.access_token)
+      localStorage.setItem("sb-refresh-token", data.session.refresh_token)
+      localStorage.setItem("sb-user-role", data.user.role)
+      localStorage.setItem("sb-user-id", data.user.id)
+
+      toast.success("Berhasil masuk (demo)")
+      router.push("/dashboard")
+      router.refresh()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Terjadi kesalahan"
+      setError(message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -56,27 +100,27 @@ export default function LoginPage() {
         <h1 className="text-center text-xl font-bold text-tenunara-charcoal">Masuk</h1>
         <p className="mt-1 text-center text-sm text-tenunara-teal">Masuk ke akun TENUNARA Anda</p>
 
-        {/* Demo quick-login buttons — like Tokopedia's social login */}
+        {/* Demo quick-login buttons */}
         <div className="mt-6 grid grid-cols-2 gap-3">
           <button
             type="button"
-            onClick={() => handleDemoLogin("seller")}
+            onClick={() => handleDemoLogin("umkm")}
             disabled={loading}
             className="flex flex-col items-center gap-1 rounded-xl border border-border px-4 py-3 text-center transition-colors duration-200 hover:bg-tenunara-mint/50 disabled:opacity-50"
           >
             <span className="text-lg">🏭</span>
             <span className="text-xs font-semibold text-tenunara-charcoal">Demo UMKM</span>
-            <span className="text-[10px] text-tenunara-teal/60">seller@tenunara.demo</span>
+            <span className="text-[10px] text-tenunara-teal/60">umkm@tenunara.demo</span>
           </button>
           <button
             type="button"
-            onClick={() => handleDemoLogin("buyer")}
+            onClick={() => handleDemoLogin("pengrajin")}
             disabled={loading}
             className="flex flex-col items-center gap-1 rounded-xl border border-border px-4 py-3 text-center transition-colors duration-200 hover:bg-tenunara-mint/50 disabled:opacity-50"
           >
             <span className="text-lg">🧵</span>
             <span className="text-xs font-semibold text-tenunara-charcoal">Demo Pengrajin</span>
-            <span className="text-[10px] text-tenunara-teal/60">buyer@tenunara.demo</span>
+            <span className="text-[10px] text-tenunara-teal/60">pengrajin@tenunara.demo</span>
           </button>
         </div>
 
@@ -109,11 +153,11 @@ export default function LoginPage() {
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
-                placeholder="Min. 6 karakter"
+                placeholder="Min. 8 karakter"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
                 autoComplete="current-password"
               />
               <button

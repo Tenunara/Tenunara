@@ -79,7 +79,8 @@ export function Navbar({ user, onLogout }: NavbarProps) {
     return pathname.startsWith(href)
   }
 
-  const navLinks = user?.role === "seller" ? sellerLinks : buyerLinks
+  const isSeller = user?.role === "seller" || user?.role === "umkm"
+  const navLinks = isSeller ? sellerLinks : buyerLinks
 
   return (
     <header

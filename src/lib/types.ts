@@ -1,7 +1,81 @@
 // ============================================================
-// ENUMS
+// AUTH & PROFILE TYPES
 // ============================================================
-export type UserRole = "seller" | "buyer"
+export interface PengrajinRow {
+  id: string
+  nama: string
+  email: string
+  nomor_telepon: string
+  foto_profil_url: string | null
+  kota: string
+  kabupaten: string
+  alamat: string
+  created_at: string
+  updated_at: string
+}
+
+export interface UmkmRow {
+  id: string
+  nama_penjual: string
+  nama_toko: string
+  email: string
+  nomor_telepon: string
+  foto_profil_url: string | null
+  kota: string
+  kabupaten: string
+  alamat: string
+  npwp_nib: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface RegisterPengrajinRequest {
+  nama: string
+  email: string
+  nomor_telepon: string
+  password: string
+  foto_profil_base64?: string
+  kota: string
+  kabupaten: string
+  alamat: string
+}
+
+export interface RegisterUmkmRequest {
+  nama_penjual: string
+  nama_toko: string
+  email: string
+  nomor_telepon: string
+  password: string
+  foto_profil_base64?: string
+  kota: string
+  kabupaten: string
+  alamat: string
+  npwp_nib?: string
+}
+
+export interface LoginRequest {
+  email: string
+  password: string
+}
+
+export interface AuthResponse {
+  user: {
+    id: string
+    email: string
+    role: UserRole
+  }
+  session: {
+    access_token: string
+    refresh_token: string
+    expires_at: number
+  }
+  profile: PengrajinRow | UmkmRow
+}
+
+// ============================================================
+// ENUMS (continued)
+// ============================================================
+export type UserRole = "seller" | "buyer" | "pengrajin" | "umkm"
 export type Material = "denim" | "cotton" | "polyester" | "mixed" | "other"
 export type Color =
   | "blue"
