@@ -95,7 +95,7 @@ function LoginForm() {
     setError(null);
 
     const demoAccounts: Record<string, { email: string; password: string }> = {
-      pengrajin: { email: "pengrajin@email.com", password: "password123" },
+      pengrajin: { email: "pengerajin@email.com", password: "password123" },
       umkm: { email: "umkm@email.com", password: "password123" },
     };
 

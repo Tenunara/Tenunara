@@ -38,14 +38,14 @@ interface TransactionTableProps {
 export function TransactionTable({ transactions }: TransactionTableProps) {
   if (transactions.length === 0) {
     return (
-      <div className="flex h-32 items-center justify-center rounded-2xl border border-[#E5DDD5] bg-white text-sm text-[#4F626399]">
+      <div className="flex h-32 items-center justify-center rounded-2xl border border-tenunara-charcoal/[0.06] bg-white text-sm text-tenunara-teal/60">
         Belum ada transaksi
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-[#E5DDD5] bg-white shadow-sm">
+    <div className="rounded-2xl border border-tenunara-charcoal/[0.06] bg-white shadow-sm">
       <div className="p-5 pb-3">
         <h3 className="text-sm font-semibold text-tenunara-charcoal">
           Riwayat Transaksi Terkini
