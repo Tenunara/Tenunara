@@ -1,0 +1,16 @@
+{
+  "records": [
+    { "date": "2026-03-01", "waste_diverted_kg": 50, "co2_saved_kg": 340, "transaction_count": 2 },
+    { "date": "2026-03-15", "waste_diverted_kg": 80, "co2_saved_kg": 544, "transaction_count": 3 },
+    { "date": "2026-04-01", "waste_diverted_kg": 60, "co2_saved_kg": 408, "transaction_count": 2 },
+    { "date": "2026-04-15", "waste_diverted_kg": 100, "co2_saved_kg": 680, "transaction_count": 4 },
+    { "date": "2026-05-01", "waste_diverted_kg": 120, "co2_saved_kg": 816, "transaction_count": 5 },
+    { "date": "2026-05-15", "waste_diverted_kg": 90, "co2_saved_kg": 612, "transaction_count": 3 }
+  ],
+  "summary": {
+    "total_waste_kg": 500,
+    "total_co2_kg": 3400,
+    "total_transactions": 19,
+    "trees_equivalent": 57
+  }
+}
