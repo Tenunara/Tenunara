@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import Image from "next/image"
 import { ArrowRight } from "lucide-react"
 
 interface HeroSlide {
@@ -8,7 +9,8 @@ interface HeroSlide {
   title: string
   description: string
   cta: string
-  bg: string
+  image: string
+  overlay?: string
 }
 
 const SLIDES: HeroSlide[] = [
@@ -17,21 +19,24 @@ const SLIDES: HeroSlide[] = [
     title: "Grade A Mulai\nRp 15.000/kg",
     description: "Dapatkan limbah kain denim & katun kualitas premium dari UMKM konveksi terpercaya di seluruh Indonesia.",
     cta: "Lihat Katalog",
-    bg: "from-[#55433F] via-[#6a5049] to-[#4a3a36]",
+    image: "https://wlbrqeheezylqqkpgxra.supabase.co/storage/v1/object/public/product-images/50028-ilustrasi-umkm.jpg",
+    overlay: "from-black/70 via-black/40 to-black/10",
   },
   {
     tag: "✨ Kreativitas Tanpa Batas",
     title: "Grade B & C\nMulai Rp 6.000/kg",
     description: "Kain ekonomis untuk proyek kreatif Anda. Cocok untuk eksperimen, prototyping, dan produk inovatif lainnya.",
     cta: "Lihat Promo",
-    bg: "from-[#4F6263] via-[#5a7273] to-[#3d5253]",
+    image: "https://wlbrqeheezylqqkpgxra.supabase.co/storage/v1/object/public/product-images/images%20(1).jpg",
+    overlay: "from-black/70 via-black/45 to-black/15",
   },
   {
     tag: "🌱 Gabung Jadi Mitra",
     title: "Jual Limbah Kain,\nDapatkan Untung",
     description: "UMKM konveksi bisa jual sisa kain produksi di TENUNARA. Raih keuntungan tambahan sambil berkontribusi untuk lingkungan.",
     cta: "Daftar Sekarang",
-    bg: "from-[#9C4A3C] via-[#8a4236] to-[#7a3a30]",
+    image: "https://wlbrqeheezylqqkpgxra.supabase.co/storage/v1/object/public/product-images/images%20(2).jpg",
+    overlay: "from-black/75 via-black/45 to-black/15",
   },
 ]
 
@@ -48,10 +53,22 @@ export function HeroBanner() {
   const slide = SLIDES[current]
 
   return (
-    <div
-      className={`relative min-h-[200px] overflow-hidden rounded-2xl bg-gradient-to-br ${slide.bg} cursor-pointer`}
-    >
-      <div className="flex items-center justify-between px-6 py-8 md:px-10 md:py-10">
+    <div className="relative min-h-[200px] overflow-hidden rounded-2xl cursor-pointer">
+      <Image
+        src={slide.image}
+        alt="Banner Tenunara"
+        fill
+        className="object-cover object-center"
+        priority={current === 0}
+        quality={90}
+        sizes="(min-width: 1280px) 1280px, (min-width: 1024px) 1024px, (min-width: 768px) 90vw, 100vw"
+      />
+      <div
+        className={`absolute inset-0 bg-gradient-to-r ${slide.overlay ?? "from-black/70 via-black/40 to-black/10"}`}
+        aria-hidden="true"
+      />
+
+      <div className="relative flex items-center justify-between px-6 py-8 md:px-10 md:py-10">
         <div className="max-w-[55%]">
           <span className="inline-block rounded-full bg-white/15 px-3 py-1 text-[10px] font-semibold tracking-wide text-white uppercase backdrop-blur-sm">
             {slide.tag}

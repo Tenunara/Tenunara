@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { Bell, ShoppingCart, Menu, Search, LogOut, LayoutDashboard, Sparkles } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -22,8 +23,7 @@ import {
 } from "@/components/ui/sheet"
 import type { Profile } from "@/lib/types"
 
-const LOGO = "TENUNARA"
-const LOGO_MARK = "◈"
+const LOGO_SRC = "/images/logo.png"
 
 interface MarketplaceHeaderProps {
   user: Profile | null
@@ -60,8 +60,14 @@ export function MarketplaceHeader({ user, onLogout }: MarketplaceHeaderProps) {
             <SheetContent side="left" className="w-64">
               <SheetHeader className="border-b border-border pb-4">
                 <SheetTitle className="flex items-center gap-2 text-left">
-                  <span className="font-heading text-xl text-tenunara-terracotta">{LOGO_MARK}</span>
-                  <span className="font-heading text-lg font-bold text-tenunara-charcoal">{LOGO}</span>
+                    <Image
+                      src={LOGO_SRC}
+                      alt="Tenunara"
+                      width={140}
+                      height={40}
+                      className="h-8 w-auto"
+                      priority
+                    />
                 </SheetTitle>
               </SheetHeader>
               <nav className="mt-4 flex flex-col gap-1">
@@ -101,11 +107,15 @@ export function MarketplaceHeader({ user, onLogout }: MarketplaceHeaderProps) {
         )}
 
         {/* Logo */}
-        <Link href={user ? "/dashboard" : "/"} className="flex shrink-0 items-center gap-2">
-          <span className="font-heading text-xl text-tenunara-terracotta">{LOGO_MARK}</span>
-          <span className="hidden font-heading text-lg font-bold text-tenunara-charcoal sm:inline">
-            {LOGO}
-          </span>
+        <Link href={user ? "/dashboard" : "/"} className="-ml-1 flex shrink-0 items-center gap-2 sm:-ml-2">
+          <Image
+            src={LOGO_SRC}
+            alt="Tenunara"
+            width={150}
+            height={44}
+            className="h-8 w-auto md:h-9"
+            priority
+          />
         </Link>
 
         {/* Nav links — pengrajin */}

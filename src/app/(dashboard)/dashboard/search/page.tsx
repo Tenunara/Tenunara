@@ -1,14 +1,13 @@
 "use client"
 
-import { Suspense, useEffect, useState } from "react"
+import { Suspense, useEffect, useState, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Search, Package, Loader2 } from "lucide-react"
-import { ListingCard } from "@/components/listing/listing-card"
 import { SearchBar } from "@/components/search/search-bar"
 import { SearchFilters, type FilterState } from "@/components/search/search-filters"
+import { SemanticResultCard } from "@/components/search/semantic-result-card"
 import { ErrorState } from "@/components/shared"
-import { cn } from "@/lib/utils"
-import type { SearchResultItem } from "@/lib/types"
+import type { SemanticSearchResult, ParsedQuery } from "@/lib/types"
 
 const defaultFilters: FilterState = {
   material: null,
@@ -18,10 +17,32 @@ const defaultFilters: FilterState = {
   minQuantityKg: null,
 }
 
+interface SemanticResponse {
+  results: SemanticSearchResult[]
+  parsed_query: ParsedQuery
+  from_cache: boolean
+}
+
+// Material filter mapping: Material type values → fabric_type_name patterns
+const MATERIAL_NAME_MAP: Record<string, string[]> = {
+  cotton:  ["Katun", "Cotton"],
+  denim:   ["Denim"],
+  polyester: ["Polyester", "TC (Tetoron Cotton)", "Cotton Polyester"],
+  mixed:   ["CVC", "Campuran", "Blend"],
+  other:   ["Rayon", "Drill", "Spandex", "Nylon", "Kanvas", "Sutra", "Wol", "Linen"],
+}
+
+function matchFilterMaterial(fabricTypeName: string, filterMaterial: string): boolean {
+  const patterns = MATERIAL_NAME_MAP[filterMaterial]
+  if (!patterns) return false
+  const lowerName = fabricTypeName.toLowerCase()
+  return patterns.some((p) => lowerName.includes(p.toLowerCase()))
+}
+
 function ListingSkeleton() {
   return (
     <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      {Array.from({ length: 3 }).map((_, i) => (
+      {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="overflow-hidden rounded-3xl bg-white shadow-sm">
           <div className="aspect-[4/3] w-full animate-pulse bg-tenunara-teal/10" />
           <div className="space-y-2 p-4">
@@ -40,13 +61,23 @@ function SearchResultsContent() {
   const searchParams = useSearchParams()
   const query = searchParams.get("q") || ""
 
-  const [results, setResults] = useState<SearchResultItem[]>([])
+  const [results, setResults] = useState<SemanticSearchResult[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [parsedQuery, setParsedQuery] = useState<ParsedQuery | null>(null)
   const [filters, setFilters] = useState<FilterState>(defaultFilters)
+  const [fromCache, setFromCache] = useState(false)
 
-  // TODO: Replace mock search with real API call:
-  // POST /api/search with { query, filters }
+  const handleSearch = useCallback(
+    (q: string) => {
+      if (q.trim()) {
+        router.push(`/dashboard/search?q=${encodeURIComponent(q.trim())}`)
+      }
+    },
+    [router],
+  )
+
+  // Fetch from real semantic search API
   useEffect(() => {
     if (!query.trim()) {
       setResults([])
@@ -57,13 +88,19 @@ function SearchResultsContent() {
     setLoading(true)
     setError(null)
 
-    fetch("/data/temp_data_search_results.json")
+    fetch("/api/search/semantic", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query: query.trim() }),
+    })
       .then((res) => {
         if (!res.ok) throw new Error("Pencarian gagal")
-        return res.json()
+        return res.json() as Promise<SemanticResponse>
       })
       .then((json) => {
-        setResults(json.data as SearchResultItem[])
+        setResults(json.results ?? [])
+        setParsedQuery(json.parsed_query ?? null)
+        setFromCache(json.from_cache ?? false)
         setLoading(false)
       })
       .catch((err) => {
@@ -72,21 +109,15 @@ function SearchResultsContent() {
       })
   }, [query])
 
-  // Apply client-side filters
+  // Apply client-side filters (for narrowing after semantic results)
   const filtered = results.filter((item) => {
-    if (filters.material && item.material !== filters.material) return false
-    if (filters.grade && item.grade !== filters.grade) return false
+    if (filters.material && !matchFilterMaterial(item.fabric_type_name, filters.material)) return false
+    if (filters.grade && item.final_grade !== filters.grade) return false
     if (filters.minPricePerKg !== null && item.price_per_kg < filters.minPricePerKg) return false
     if (filters.maxPricePerKg !== null && item.price_per_kg > filters.maxPricePerKg) return false
-    if (filters.minQuantityKg !== null && item.quantity_kg < filters.minQuantityKg) return false
+    if (filters.minQuantityKg !== null && item.total_weight_kg < filters.minQuantityKg) return false
     return true
   })
-
-  const handleSearch = (q: string) => {
-    if (q.trim()) {
-      router.push(`/dashboard/search?q=${encodeURIComponent(q.trim())}`)
-    }
-  }
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -118,7 +149,7 @@ function SearchResultsContent() {
             <ListingSkeleton />
           </>
         ) : error ? (
-          <ErrorState message={error} onRetry={() => window.location.reload()} />
+          <ErrorState message={error} onRetry={() => handleSearch(query)} />
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
             <Package className="h-12 w-12 text-tenunara-teal/30" />
@@ -129,15 +160,27 @@ function SearchResultsContent() {
           </div>
         ) : (
           <>
-            <p className="mb-4 text-sm text-tenunara-teal">
-              Menampilkan {filtered.length} hasil untuk &ldquo;{query}&rdquo;
-            </p>
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-sm text-tenunara-teal">
+                Menampilkan {filtered.length} hasil untuk &ldquo;{query}&rdquo;
+                {fromCache && (
+                  <span className="ml-2 text-[11px] text-tenunara-teal/50">(dari cache)</span>
+                )}
+              </p>
+              {parsedQuery && (
+                <p className="text-[11px] text-tenunara-teal/50">
+                  {parsedQuery.fabric_type && `Bahan: ${parsedQuery.fabric_type}`}
+                  {parsedQuery.color && ` · Warna: ${parsedQuery.color}`}
+                  {parsedQuery.grade && ` · Grade: ${parsedQuery.grade}`}
+                </p>
+              )}
+            </div>
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {filtered.map((item) => (
-                <SearchResultCard
-                  key={item.id}
-                  item={item}
-                  onClick={() => router.push(`/dashboard/listings/${item.id}`)}
+                <SemanticResultCard
+                  key={item.product_id}
+                  result={item}
+                  onClick={(pid) => router.push(`/dashboard/listings/${pid}`)}
                 />
               ))}
             </div>
@@ -145,70 +188,6 @@ function SearchResultsContent() {
         )}
       </div>
     </div>
-  )
-}
-
-function SearchResultCard({
-  item,
-  onClick,
-}: {
-  item: SearchResultItem
-  onClick: (id: string) => void
-}) {
-  const [imgError, setImgError] = useState(false)
-  const [imgLoading, setImgLoading] = useState(true)
-
-  return (
-    <button
-      onClick={() => onClick(item.id)}
-      className="group relative flex flex-col overflow-hidden rounded-3xl bg-white text-left shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
-    >
-      {/* Image */}
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-tenunara-mint">
-        {imgLoading && !imgError && (
-          <div className="absolute inset-0 animate-pulse bg-tenunara-teal/10" />
-        )}
-        {imgError ? (
-          <div className="flex h-full items-center justify-center">
-            <Package className="h-8 w-8 text-tenunara-teal/30" />
-          </div>
-        ) : (
-          <img
-            src={item.image_url || "/dummy1.png"}
-            alt={item.title}
-            className={cn(
-              "h-full w-full object-cover transition-all duration-300 group-hover:scale-105",
-              imgLoading ? "opacity-0" : "opacity-100",
-            )}
-            onLoad={() => setImgLoading(false)}
-            onError={() => {
-              setImgLoading(false)
-              setImgError(true)
-            }}
-          />
-        )}
-
-        {/* Similarity badge */}
-        <div className="absolute right-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold text-tenunara-charcoal shadow-sm backdrop-blur-sm">
-          {Math.round(item.similarity * 100)}% cocok
-        </div>
-      </div>
-
-      {/* Info */}
-      <div className="flex flex-col gap-1 p-4">
-        <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-tenunara-charcoal group-hover:text-tenunara-terracotta">
-          {item.title}
-        </h3>
-        <p className="text-xs text-tenunara-teal">
-          {item.seller_name}
-          {item.seller_company && ` · ${item.seller_company}`}
-        </p>
-        <p className="mt-auto pt-1 text-base font-bold text-tenunara-terracotta">
-          Rp {item.price_per_kg.toLocaleString("id-ID")}
-          <span className="text-xs font-normal text-tenunara-teal"> /kg</span>
-        </p>
-      </div>
-    </button>
   )
 }
 

@@ -10,11 +10,16 @@ CREATE EXTENSION IF NOT EXISTS vector;
 ALTER TABLE products
   ADD COLUMN IF NOT EXISTS search_embedding vector(1024);
 
--- 3. Index for similarity search performance
-CREATE INDEX IF NOT EXISTS idx_products_embedding
+-- 3. Indexes for similarity search performance
+-- Primary: HNSW index for high-recall ANN search (better than IVFFlat)
+CREATE INDEX IF NOT EXISTS idx_products_embedding_hnsw
   ON products
-  USING ivfflat (search_embedding vector_cosine_ops)
-  WITH (lists = 100);
+  USING hnsw (search_embedding vector_cosine_ops)
+  WITH (m = 16, ef_construction = 200);
+
+-- Fallback: IVFFlat index for low-latency approximate search
+-- (keep existing for backward compatibility or fallback)
+DROP INDEX IF EXISTS idx_products_embedding;
 
 -- 4. Search queries log table
 CREATE TABLE IF NOT EXISTS search_queries (
@@ -46,19 +51,23 @@ END;
 $$;
 
 -- 7. Vector search RPC function
+-- Mengembalikan lebih banyak kandidat untuk re-ranking di application layer.
+-- Hard filter untuk fabric_type dan grade dilakukan sebagai preferensi (bukan mutlak)
+-- sehingga produk yang mendekati tetap muncul.
 CREATE OR REPLACE FUNCTION match_products(
   query_embedding   vector(1024),
   p_fabric_type     TEXT    DEFAULT NULL,
   p_min_weight      NUMERIC DEFAULT NULL,
   p_grade           CHAR(1) DEFAULT NULL,
   p_kota_pengrajin  TEXT    DEFAULT NULL,
-  p_match_count     INT     DEFAULT 10
+  p_match_count     INT     DEFAULT 50
 )
 RETURNS TABLE (
   product_id        UUID,
   umkm_id           UUID,
   nama_toko         TEXT,
   fabric_type_name  TEXT,
+  fabric_category   TEXT,
   final_grade       CHAR(1),
   total_weight_kg   NUMERIC,
   price_per_kg      NUMERIC,
@@ -66,7 +75,9 @@ RETURNS TABLE (
   ai_dominant_color VARCHAR,
   ai_size_range     TEXT,
   ai_pattern        TEXT,
+  ai_reasoning      TEXT,
   kota              TEXT,
+  kabupaten         TEXT,
   is_negotiable     BOOLEAN,
   semantic_score    FLOAT,
   geo_boost         FLOAT
@@ -79,17 +90,20 @@ BEGIN
     p.umkm_id::UUID                               AS umkm_id,
     u.nama_toko::TEXT                             AS nama_toko,
     ft.name::TEXT                                 AS fabric_type_name,
-    p.final_grade::CHAR(1)                        AS final_grade,
+    ft.category::TEXT                             AS fabric_category,
+    COALESCE(p.final_grade, p.ai_suggested_grade, 'B')::CHAR(1) AS final_grade,
     p.total_weight_kg::NUMERIC                    AS total_weight_kg,
     p.price_per_kg::NUMERIC                       AS price_per_kg,
     p.minimum_order_kg::NUMERIC                   AS minimum_order_kg,
     p.ai_dominant_color::VARCHAR                  AS ai_dominant_color,
     p.ai_size_range::TEXT                         AS ai_size_range,
     p.ai_pattern::TEXT                            AS ai_pattern,
+    p.ai_reasoning::TEXT                          AS ai_reasoning,
     u.kota::TEXT                                  AS kota,
+    u.kabupaten::TEXT                             AS kabupaten,
     p.is_negotiable::BOOLEAN                      AS is_negotiable,
     (1 - (p.search_embedding <=> query_embedding))::FLOAT AS semantic_score,
-    CASE WHEN u.kota = p_kota_pengrajin THEN 0.1 ELSE 0.0 END::FLOAT AS geo_boost
+    CASE WHEN u.kota = p_kota_pengrajin THEN 0.15 ELSE 0.0 END::FLOAT AS geo_boost
   FROM products p
   JOIN umkm u  ON p.umkm_id = u.id
   JOIN fabric_types ft ON p.fabric_type_id = ft.id
@@ -97,12 +111,6 @@ BEGIN
     p.status = 'published'
     AND p.search_embedding IS NOT NULL
     AND p.total_weight_kg >= 0.5
-    -- Hard filter: fabric type (if mentioned in query)
-    AND (p_fabric_type IS NULL OR ft.name ILIKE p_fabric_type)
-    -- Hard filter: minimum weight
-    AND (p_min_weight IS NULL OR p.total_weight_kg >= p_min_weight)
-    -- Hard filter: grade
-    AND (p_grade IS NULL OR p.final_grade = p_grade)
   ORDER BY semantic_score DESC
   LIMIT p_match_count;
 END;

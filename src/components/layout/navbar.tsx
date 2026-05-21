@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Menu,
@@ -33,10 +34,7 @@ import { cn } from "@/lib/utils";
 import type { Profile } from "@/lib/types";
 import { Sidebar } from "@/components/layout/sidebar";
 
-const LOGO = "TENUNARA";
-
-// TODO: Replace with dynamic logo/icon once brand logo asset is finalized
-const LOGO_MARK = "◈";
+const LOGO_SRC = "/images/logo.png";
 
 interface NavLink {
   label: string;
@@ -146,12 +144,14 @@ export function Navbar({ user, onLogout }: NavbarProps) {
             href={user ? "/dashboard" : "/"}
             className="flex items-center gap-2"
           >
-            <span className="text-xl font-bold text-tenunara-terracotta">
-              {LOGO_MARK}
-            </span>
-            <span className="text-lg font-bold text-tenunara-charcoal">
-              {LOGO}
-            </span>
+            <Image
+              src={LOGO_SRC}
+              alt="Tenunara"
+              width={150}
+              height={44}
+              className="h-8 w-auto md:h-9"
+              priority
+            />
           </Link>
         </div>
 
