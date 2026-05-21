@@ -10,12 +10,18 @@ import {
   AlertTriangle,
   CheckCircle2,
   Ban,
-  CreditCard,
   Truck,
   ShieldCheck,
   Scale,
-  ChevronDown,
   Info,
+  Wallet,
+  QrCode,
+  Landmark,
+  Building2,
+  MapPin,
+  Send,
+  Zap,
+  type LucideIcon,
 } from "lucide-react"
 import { ErrorState, ConfirmDialog } from "@/components/shared"
 import { Button } from "@/components/ui/button"
@@ -68,6 +74,32 @@ function parseOrderNotes(notes: string | null): { meta: string | null; cleanNote
     }
   }
   return { meta: null, cleanNotes: notes }
+}
+
+type OptionMeta = { description: string; Icon: LucideIcon }
+
+const SHIPPING_OPTION_META: Record<string, OptionMeta> = {
+  jne: { description: "Layanan reguler nasional dengan jaringan luas.", Icon: Truck },
+  jnt: { description: "Kurir ekspres dengan jangkauan luas.", Icon: Send },
+  sicepat: { description: "Pengiriman cepat untuk kebutuhan harian.", Icon: Zap },
+  anteraja: { description: "Pilihan kurir nasional untuk pengiriman aman.", Icon: MapPin },
+  ninja_xpress: { description: "Kurir e-commerce andalan untuk paket Anda.", Icon: Package },
+}
+
+const PAYMENT_METHOD_META: Record<string, OptionMeta> = {
+  ewallet: { description: "DANA, GoPay, OVO, ShopeePay, LinkAja.", Icon: Wallet },
+  qris: {
+    description: "QR nasional untuk bayar sekali scan dari aplikasi apa pun.",
+    Icon: QrCode,
+  },
+  virtual_account: {
+    description: "Nomor rekening unik untuk transfer otomatis.",
+    Icon: Landmark,
+  },
+  transfer_bank: {
+    description: "Mobile/Internet Banking (BCA, Mandiri, BNI, BRI).",
+    Icon: Building2,
+  },
 }
 
 // ─── Skeleton ────────────────────────────────────────────────
@@ -402,8 +434,12 @@ export default function OrderDetailPage() {
   const [cancelReason, setCancelReason] = useState("")
 
   // Shipping / payment options (selected during pay)
-  const [shippingOption, setShippingOption] = useState("reguler")
-  const [paymentMethod, setPaymentMethod] = useState("transfer_bank")
+  const [shippingOption, setShippingOption] = useState(
+    SHIPPING_OPTIONS[0]?.value || "jne",
+  )
+  const [paymentMethod, setPaymentMethod] = useState(
+    PAYMENT_METHODS[0]?.value || "ewallet",
+  )
 
   // Dispute form
   const [showDisputeForm, setShowDisputeForm] = useState(false)
@@ -570,7 +606,7 @@ export default function OrderDetailPage() {
   const canConfirmReceipt = !isUmkm && status === "in_verification"
   const canDispute = !isUmkm && status === "in_verification"
   const { meta: orderMeta, cleanNotes } = parseOrderNotes(order.notes)
-  const selectedShippingCost = SHIPPING_OPTIONS.find(o => o.value === shippingOption)?.cost || 15000
+  const selectedShippingCost = SHIPPING_OPTIONS.find(o => o.value === shippingOption)?.cost || 12000
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -625,36 +661,137 @@ export default function OrderDetailPage() {
             <div className="space-y-4">
               {/* Shipping option */}
               <div>
-                <Label htmlFor="shipping">Opsi Pengiriman</Label>
-                <select
-                  id="shipping"
-                  value={shippingOption}
-                  onChange={(e) => setShippingOption(e.target.value)}
-                  className="mt-1 block w-full rounded-xl border border-border bg-white px-3 py-2.5 text-sm text-tenunara-charcoal focus:border-tenunara-terracotta focus:outline-none"
-                >
-                  {SHIPPING_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label} — {formatCurrency(opt.cost)}
-                    </option>
-                  ))}
-                </select>
+                <Label id="shipping-label">Opsi Pengiriman</Label>
+                <div role="radiogroup" aria-labelledby="shipping-label" className="mt-2 space-y-2">
+                  {SHIPPING_OPTIONS.map((opt) => {
+                    const meta = SHIPPING_OPTION_META[opt.value] || {
+                      description: "",
+                      Icon: Truck,
+                    }
+                    const Icon = meta.Icon
+                    const active = shippingOption === opt.value
+
+                    return (
+                      <label
+                        key={opt.value}
+                        className={cn(
+                          "flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition-colors",
+                          active
+                            ? "border-tenunara-terracotta bg-tenunara-mint/30"
+                            : "border-border bg-white hover:bg-tenunara-mint/10",
+                        )}
+                      >
+                        <input
+                          type="radio"
+                          id={`shipping-${opt.value}`}
+                          name="shipping"
+                          value={opt.value}
+                          checked={active}
+                          onChange={(e) => setShippingOption(e.target.value)}
+                          className="sr-only"
+                        />
+                        <span
+                          className={cn(
+                            "flex h-10 w-10 items-center justify-center rounded-xl",
+                            active
+                              ? "bg-tenunara-terracotta/10 text-tenunara-terracotta"
+                              : "bg-tenunara-mint/40 text-tenunara-teal",
+                          )}
+                        >
+                          <Icon className="h-5 w-5" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-semibold text-tenunara-charcoal">
+                            {opt.label}
+                          </span>
+                          {meta.description && (
+                            <span className="block text-xs text-tenunara-teal">
+                              {meta.description}
+                            </span>
+                          )}
+                        </span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-sm font-semibold text-tenunara-charcoal">
+                            {formatCurrency(opt.cost)}
+                          </span>
+                          <span
+                            className={cn(
+                              "h-4 w-4 rounded-full border",
+                              active
+                                ? "border-tenunara-terracotta bg-tenunara-terracotta"
+                                : "border-border",
+                            )}
+                          />
+                        </div>
+                      </label>
+                    )
+                  })}
+                </div>
               </div>
 
               {/* Payment method */}
               <div>
-                <Label htmlFor="payment">Metode Pembayaran</Label>
-                <select
-                  id="payment"
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="mt-1 block w-full rounded-xl border border-border bg-white px-3 py-2.5 text-sm text-tenunara-charcoal focus:border-tenunara-terracotta focus:outline-none"
-                >
-                  {PAYMENT_METHODS.map((method) => (
-                    <option key={method.value} value={method.value}>
-                      {method.label}
-                    </option>
-                  ))}
-                </select>
+                <Label id="payment-label">Metode Pembayaran</Label>
+                <div role="radiogroup" aria-labelledby="payment-label" className="mt-2 space-y-2">
+                  {PAYMENT_METHODS.map((method) => {
+                    const meta = PAYMENT_METHOD_META[method.value] || {
+                      description: "",
+                      Icon: Wallet,
+                    }
+                    const Icon = meta.Icon
+                    const active = paymentMethod === method.value
+
+                    return (
+                      <label
+                        key={method.value}
+                        className={cn(
+                          "flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition-colors",
+                          active
+                            ? "border-tenunara-terracotta bg-tenunara-mint/30"
+                            : "border-border bg-white hover:bg-tenunara-mint/10",
+                        )}
+                      >
+                        <input
+                          type="radio"
+                          id={`payment-${method.value}`}
+                          name="payment"
+                          value={method.value}
+                          checked={active}
+                          onChange={(e) => setPaymentMethod(e.target.value)}
+                          className="sr-only"
+                        />
+                        <span
+                          className={cn(
+                            "flex h-10 w-10 items-center justify-center rounded-xl",
+                            active
+                              ? "bg-tenunara-terracotta/10 text-tenunara-terracotta"
+                              : "bg-tenunara-mint/40 text-tenunara-teal",
+                          )}
+                        >
+                          <Icon className="h-5 w-5" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-semibold text-tenunara-charcoal">
+                            {method.label}
+                          </span>
+                          {meta.description && (
+                            <span className="block text-xs text-tenunara-teal">
+                              {meta.description}
+                            </span>
+                          )}
+                        </span>
+                        <span
+                          className={cn(
+                            "h-4 w-4 rounded-full border",
+                            active
+                              ? "border-tenunara-terracotta bg-tenunara-terracotta"
+                              : "border-border",
+                          )}
+                        />
+                      </label>
+                    )
+                  })}
+                </div>
               </div>
 
               {/* Price preview */}

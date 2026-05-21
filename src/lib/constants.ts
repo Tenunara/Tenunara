@@ -188,9 +188,11 @@ export const ORDER_STATUS_FLOW: string[] = [
 // ─── Shipping / Payment Options ───────────────────────────────
 
 export const SHIPPING_OPTIONS: { value: string; label: string; cost: number }[] = [
-  { value: "reguler", label: "Reguler (3-5 hari)", cost: 10000 },
-  { value: "express", label: "Express (1-2 hari)", cost: 20000 },
-  { value: "same_day", label: "Same Day", cost: 35000 },
+  { value: "jne", label: "JNE", cost: 12000 },
+  { value: "jnt", label: "J&T Express", cost: 11000 },
+  { value: "sicepat", label: "SiCepat Ekspres", cost: 13000 },
+  { value: "anteraja", label: "Anteraja", cost: 10000 },
+  { value: "ninja_xpress", label: "Ninja Xpress", cost: 12500 },
 ]
 
 export const SHIPPING_OPTION_LABEL: Record<string, string> = Object.fromEntries(
@@ -198,9 +200,10 @@ export const SHIPPING_OPTION_LABEL: Record<string, string> = Object.fromEntries(
 )
 
 export const PAYMENT_METHODS: { value: string; label: string }[] = [
-  { value: "transfer_bank", label: "Transfer Bank" },
+  { value: "ewallet", label: "Dompet Digital (E-Wallet)" },
+  { value: "qris", label: "QRIS" },
   { value: "virtual_account", label: "Virtual Account" },
-  { value: "ewallet", label: "E-Wallet" },
+  { value: "transfer_bank", label: "Transfer Bank Langsung" },
 ]
 
 export const PAYMENT_METHOD_LABEL: Record<string, string> = Object.fromEntries(

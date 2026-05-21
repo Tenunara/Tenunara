@@ -3,21 +3,26 @@ import { jsonResponse, errorResponse } from "@/lib/api-response";
 import { getAuthenticatedUser, AuthError } from "@/lib/api-auth";
 
 const SHIPPING_COST_MAP: Record<string, number> = {
-  reguler: 10000,
-  express: 20000,
-  same_day: 35000,
+  jne: 12000,
+  jnt: 11000,
+  sicepat: 13000,
+  anteraja: 10000,
+  ninja_xpress: 12500,
 };
 
 const SHIPPING_OPTION_LABEL_MAP: Record<string, string> = {
-  reguler: "Reguler (3-5 hari)",
-  express: "Express (1-2 hari)",
-  same_day: "Same Day",
+  jne: "JNE",
+  jnt: "J&T Express",
+  sicepat: "SiCepat Ekspres",
+  anteraja: "Anteraja",
+  ninja_xpress: "Ninja Xpress",
 };
 
 const PAYMENT_METHOD_LABEL_MAP: Record<string, string> = {
-  transfer_bank: "Transfer Bank",
+  ewallet: "Dompet Digital (E-Wallet)",
+  qris: "QRIS",
   virtual_account: "Virtual Account",
-  ewallet: "E-Wallet",
+  transfer_bank: "Transfer Bank Langsung",
 };
 
 function formatCurrency(amount: number): string {
