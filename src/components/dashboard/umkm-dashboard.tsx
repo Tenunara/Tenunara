@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { TrendingUp, Trash2, Leaf, Users, Loader2 } from "lucide-react";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { TrendChart } from "@/components/dashboard/trend-chart";
@@ -17,12 +17,12 @@ function DashboardSkeleton() {
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="h-32 animate-pulse rounded-2xl bg-white shadow-sm ring-1 ring-foreground/5"
+            className="h-32 animate-pulse rounded-2xl border border-[#E5DDD5] bg-white shadow-sm"
           />
         ))}
       </div>
-      <div className="h-80 animate-pulse rounded-2xl bg-white shadow-sm ring-1 ring-foreground/5" />
-      <div className="h-64 animate-pulse rounded-2xl bg-white shadow-sm ring-1 ring-foreground/5" />
+      <div className="h-80 animate-pulse rounded-2xl border border-[#E5DDD5] bg-white shadow-sm" />
+      <div className="h-64 animate-pulse rounded-2xl border border-[#E5DDD5] bg-white shadow-sm" />
     </div>
   );
 }
@@ -31,7 +31,6 @@ export function UmkmDashboard() {
   const [data, setData] = useState<UmkmDashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const reportRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("sb-access-token");
@@ -90,11 +89,11 @@ export function UmkmDashboard() {
   const craftsmanSavings = data.impact.local_economic_multiplier * 0.3;
 
   return (
-    <div ref={reportRef} className="space-y-6">
+    <div className="space-y-6">
       {/* Header with PDF export button */}
       <div className="flex items-start justify-between">
         <PageHeader />
-        <SustainabilityReportButton reportRef={reportRef} />
+        <SustainabilityReportButton />
       </div>
 
       {/* Row 1: 4 Stat Cards */}
@@ -146,7 +145,7 @@ export function UmkmDashboard() {
       </div>
 
       {/* Governance footer */}
-      <p className="text-right text-[10px] italic text-tenunara-teal/40">
+      <p className="text-right text-[10px] italic text-[#4F626366]">
         {data.governance.auditor_log}
       </p>
     </div>

@@ -1,9 +1,16 @@
-"use client"
+"use client";
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { formatDate } from "@/lib/utils"
-import type { DashboardTransaction, VerificationStatus } from "@/lib/types"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { formatDate } from "@/lib/utils";
+import type { DashboardTransaction, VerificationStatus } from "@/lib/types";
 
 const STATUS_LABEL: Record<VerificationStatus, string> = {
   menunggu_penjemputan: "Menunggu Penjemputan",
@@ -11,31 +18,34 @@ const STATUS_LABEL: Record<VerificationStatus, string> = {
   terverifikasi_match: "Terverifikasi",
   dibatalkan: "Dibatalkan",
   sengketa: "Sengketa",
-}
+};
 
-const STATUS_VARIANT: Record<VerificationStatus, "outline" | "secondary" | "default" | "destructive"> = {
+const STATUS_VARIANT: Record<
+  VerificationStatus,
+  "outline" | "secondary" | "default" | "destructive"
+> = {
   menunggu_penjemputan: "outline",
   dalam_perjalanan: "secondary",
   terverifikasi_match: "default",
   dibatalkan: "destructive",
   sengketa: "destructive",
-}
+};
 
 interface TransactionTableProps {
-  transactions: DashboardTransaction[]
+  transactions: DashboardTransaction[];
 }
 
 export function TransactionTable({ transactions }: TransactionTableProps) {
   if (transactions.length === 0) {
     return (
-      <div className="flex h-32 items-center justify-center rounded-2xl bg-white text-sm text-tenunara-teal/60">
+      <div className="flex h-32 items-center justify-center rounded-2xl border border-[#E5DDD5] bg-white text-sm text-[#4F626399]">
         Belum ada transaksi
       </div>
-    )
+    );
   }
 
   return (
-    <div className="rounded-2xl bg-white shadow-sm ring-1 ring-foreground/5">
+    <div className="rounded-2xl border border-[#E5DDD5] bg-white shadow-sm">
       <div className="p-5 pb-3">
         <h3 className="text-sm font-semibold text-tenunara-charcoal">
           Riwayat Transaksi Terkini
@@ -56,10 +66,16 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
         <TableBody>
           {transactions.map((tx) => (
             <TableRow key={tx.transaction_id}>
-              <TableCell className="text-xs">{formatDate(tx.timestamp)}</TableCell>
-              <TableCell className="text-xs capitalize">{tx.material_type}</TableCell>
+              <TableCell className="text-xs">
+                {formatDate(tx.timestamp)}
+              </TableCell>
+              <TableCell className="text-xs capitalize">
+                {tx.material_type}
+              </TableCell>
               <TableCell>
-                <Badge variant="outline" className="text-xs">{tx.grade}</Badge>
+                <Badge variant="outline" className="text-xs">
+                  {tx.grade}
+                </Badge>
               </TableCell>
               <TableCell className="text-xs">{tx.weight_kg} kg</TableCell>
               <TableCell className="text-xs font-medium">
@@ -69,8 +85,12 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
                 {tx.receiver_name}
               </TableCell>
               <TableCell>
-                <Badge variant={STATUS_VARIANT[tx.verification_status] || "outline"} className="text-xs">
-                  {STATUS_LABEL[tx.verification_status] || tx.verification_status}
+                <Badge
+                  variant={STATUS_VARIANT[tx.verification_status] || "outline"}
+                  className="text-xs"
+                >
+                  {STATUS_LABEL[tx.verification_status] ||
+                    tx.verification_status}
                 </Badge>
               </TableCell>
             </TableRow>
@@ -78,5 +98,5 @@ export function TransactionTable({ transactions }: TransactionTableProps) {
         </TableBody>
       </Table>
     </div>
-  )
+  );
 }
