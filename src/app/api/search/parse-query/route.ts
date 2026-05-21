@@ -6,17 +6,22 @@ import { jsonResponse, errorResponse } from "@/lib/api-response";
 const FABRIC_TYPES = [
   "Katun Combed", "Katun Carded", "Denim", "Rayon", "Polyester",
   "Drill", "Spandex", "Nylon", "Kanvas", "Sutra", "Wol", "Linen",
-  "CVC", "TC", "Cotton Polyester",
+  "Katun Oxford", "CVC (Cotton Viscose)", "TC (Tetoron Cotton)",
+  "Cotton Polyester",
 ];
 
 const FABRIC_ALIASES: Record<string, string> = {
-  "jins": "Denim", "denim": "Denim", "jin": "Denim", "jeans": "Denim",
-  "katun": "Katun Combed", "cotton": "Katun Combed", "kaos": "Katun Combed",
-  "poli": "Polyester", "polyester": "Polyester",
+  "jins": "Denim", "denim": "Denim", "jin": "Denim", "jeans": "Denim", "jean": "Denim",
+  "katun": "Katun Combed", "cotton": "Katun Combed", "kaos": "Katun Combed", "kaus": "Katun Combed",
+  "combed": "Katun Combed", "carded": "Katun Carded",
+  "poli": "Polyester", "polyester": "Polyester", "poliester": "Polyester",
   "nilon": "Nylon", "nylon": "Nylon",
   "kanvas": "Kanvas", "canvas": "Kanvas",
   "rayon": "Rayon", "viscose": "Rayon",
-  "drill": "Drill", "wol": "Wol", "linen": "Linen", "sutra": "Sutra",
+  "drill": "Drill", "wol": "Wol", "wool": "Wol", "linen": "Linen", "sutra": "Sutra", "silk": "Sutra",
+  "spandex": "Spandex", "stretch": "Spandex", "elastis": "Spandex",
+  "oxford": "Katun Oxford", "cvc": "CVC (Cotton Viscose)",
+  "tc": "TC (Tetoron Cotton)", "tetoron": "TC (Tetoron Cotton)",
 };
 
 // ─── Helper ────────────────────────────────────────────────────────
@@ -44,17 +49,22 @@ export async function parseQueryWithGemini(query: string) {
 Fabric types yang valid: ${FABRIC_TYPES.join(", ")}.
 
 Aturan:
-- "jins/jin/jeans" = Denim
+- "jins/jin/jeans/jean" = Denim
 - "perca/sisa/bahan" = bukan filter, abaikan
-- Hapus noise: "dong", "ya", "butuh", "mau", "cari", "buat", "bikin", "kak", "bang", "min"
+- Hapus noise: "dong", "ya", "butuh", "mau", "cari", "buat", "bikin", "kak", "bang", "min", "kak", "mas", "mbak", "pak", "bu"
 - min_weight_kg: angka sebelum "kg" atau "kilo"
-- color: warna utama jika disebutkan (gunakan Bahasa Inggris: blue, red, green, yellow, black, white, brown, grey, orange, purple, pink)
+- color: warna utama yang disebutkan (terima BAHASA INDONESIA dan Inggris).
+  Warna yang dikenal: merah/red, biru/blue, hijau/green, kuning/yellow,
+  hitam/black, putih/white, coklat/brown, abu-abu/grey, ungu/purple,
+  orange/oranye, pink/merah muda, toska/turquoise, emas/gold, perak/silver,
+  krem/cream, marun/maroon, navy/biru tua
+- color: keluarkan dalam Bahasa Inggris (red, blue, green, dll)
 - grade: A/B/C jika disebutkan secara eksplisit
+- fabric_category: "natural" jika katun/denim/linen/sutra/wol,
+  "synthetic" jika polyester/nylon/spandex/kanvas,
+  "blend" jika CVC/TC/campuran. Isi hanya jika jelas dari konteks.
 - search_text: teks bersih Bahasa Indonesia yang deskriptif untuk semantic search
-
-Query: "${query}"
-
-Respond ONLY dengan JSON valid:`
+  (hapus kata-kata filter yang sudah diekstrak, pertahankan konteks)`,
       }]
     }],
     generationConfig: {
@@ -62,11 +72,12 @@ Respond ONLY dengan JSON valid:`
       responseSchema: {
         type: "object",
         properties: {
-          fabric_type:    { type: "string" as const, nullable: true },
-          color:          { type: "string" as const, nullable: true },
-          min_weight_kg:  { type: "number" as const, nullable: true },
-          grade:          { type: "string" as const, nullable: true, enum: ["A", "B", "C"] },
-          search_text:    { type: "string" as const }
+          fabric_type:      { type: "string" as const, nullable: true },
+          fabric_category:  { type: "string" as const, nullable: true, enum: ["natural", "synthetic", "blend"] },
+          color:            { type: "string" as const, nullable: true },
+          min_weight_kg:    { type: "number" as const, nullable: true },
+          grade:            { type: "string" as const, nullable: true, enum: ["A", "B", "C"] },
+          search_text:      { type: "string" as const }
         },
         required: ["search_text"]
       }

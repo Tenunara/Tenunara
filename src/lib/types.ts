@@ -576,6 +576,7 @@ export interface SemanticSearchResult {
   umkm_id:           string;
   nama_toko:         string;
   fabric_type_name:  string;
+  fabric_category:   string;
   final_grade:       Grade;
   total_weight_kg:   number;
   price_per_kg:      number;
@@ -584,21 +585,24 @@ export interface SemanticSearchResult {
   ai_size_range:     string;
   ai_pattern:        string;
   kota:              string;
+  kabupaten:         string;
   is_negotiable:     boolean;
   final_score:       number;
   score_breakdown: {
     semantic:     number;
     hard_filter:  number;
     geo:          number;
+    price:        number;
   };
 }
 
 export interface ParsedQuery {
-  fabric_type?: string | null;
-  color?: string | null;
-  min_weight_kg?: number | null;
-  grade?: string | null;
-  search_text: string;
+  fabric_type?:      string | null;
+  fabric_category?:  string | null;
+  color?:            string | null;
+  min_weight_kg?:    number | null;
+  grade?:            string | null;
+  search_text:       string;
 }
 
 // ============================================================

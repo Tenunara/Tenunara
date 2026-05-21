@@ -6,6 +6,14 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { GradeBadge } from "@/components/listing/grade-badge";
 import type { SemanticSearchResult } from "@/lib/types";
 
+// ─── Helpers ────────────────────────────────────────────────────────
+
+function extractColorName(colorStr: string): string {
+  if (!colorStr) return ""
+  const afterHex = colorStr.split(";").pop() ?? colorStr
+  return afterHex.trim()
+}
+
 // ─── Props ─────────────────────────────────────────────────────────
 
 interface SemanticResultCardProps {
@@ -97,7 +105,7 @@ export function SemanticResultCard({ result, onClick }: SemanticResultCardProps)
 
         {/* Attributes */}
         <p className="text-xs text-tenunara-teal/70">
-          {[result.ai_dominant_color, result.ai_size_range, result.total_weight_kg ? `${result.total_weight_kg} kg` : ""]
+          {[extractColorName(result.ai_dominant_color), result.ai_size_range, result.total_weight_kg ? `${result.total_weight_kg} kg` : ""]
             .filter(Boolean)
             .join(" · ")}
         </p>

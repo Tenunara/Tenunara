@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LogOut,
@@ -80,8 +81,14 @@ export function Sidebar({ user, onLogout, mobile = false }: SidebarProps) {
 
   const logo = (
     <Link href="/dashboard" className="flex items-center gap-2">
-      <span className="text-xl font-bold text-tenunara-terracotta">◈</span>
-      <span className="text-lg font-bold text-tenunara-charcoal">TENUNARA</span>
+      <Image
+        src="/images/logo.png"
+        alt="Tenunara"
+        width={140}
+        height={40}
+        className="h-8 w-auto"
+        priority
+      />
     </Link>
   );
 
