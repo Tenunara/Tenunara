@@ -74,8 +74,8 @@ export async function GET(
         product: item.product
           ? {
               ...(item.product as object),
-              fabric_name: (item.product as Record<string, unknown>)?.fabric_types?.name || null,
-              fabric_category: (item.product as Record<string, unknown>)?.fabric_types?.category || null,
+              fabric_name: (item.product as any)?.fabric_types?.name || null,
+              fabric_category: (item.product as any)?.fabric_types?.category || null,
             }
           : null,
       })),

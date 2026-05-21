@@ -115,3 +115,72 @@ export const DEFECT_TYPE_LABEL: Record<string, string> = {
   warna_pudar: "Warna Pudar",
   cacat_tenun: "Cacat Tenun",
 }
+
+// ============================================================
+// ORDER CONSTANTS
+// ============================================================
+
+export const ORDER_STATUS_LABEL: Record<string, string> = {
+  pending_payment: "Menunggu Pembayaran",
+  awaiting_shipment: "Menunggu Pengiriman",
+  in_verification: "Dalam Verifikasi",
+  completed: "Selesai",
+  dispute: "Sengketa",
+  cancelled: "Dibatalkan",
+}
+
+export const ORDER_STATUS_COLOR: Record<string, string> = {
+  pending_payment: "bg-grade-warning/10 text-grade-warning",
+  awaiting_shipment: "bg-blue-100 text-blue-700",
+  in_verification: "bg-purple-100 text-purple-700",
+  completed: "bg-grade-success/10 text-grade-success",
+  dispute: "bg-destructive/10 text-destructive",
+  cancelled: "bg-tenunara-teal/10 text-tenunara-teal",
+}
+
+export const ORDER_STATUS_BG: Record<string, string> = {
+  pending_payment: "bg-grade-warning/5 border-grade-warning/20",
+  awaiting_shipment: "bg-blue-50/5 border-blue-200/20",
+  in_verification: "bg-purple-50/5 border-purple-200/20",
+  completed: "bg-grade-success/5 border-grade-success/20",
+  dispute: "bg-destructive/5 border-destructive/20",
+  cancelled: "bg-tenunara-teal/5 border-tenunara-teal/20",
+}
+
+export const ORDER_DISPUTE_REASON_OPTIONS: { value: string; label: string }[] = [
+  { value: "quality_not_match", label: "Kualitas Tidak Sesuai" },
+  { value: "grade_different", label: "Grade Berbeda" },
+  { value: "wrong_material", label: "Bahan Salah" },
+  { value: "damaged", label: "Rusak" },
+  { value: "quantity_insufficient", label: "Jumlah Kurang" },
+  { value: "other", label: "Lainnya" },
+]
+
+export const ORDER_DISPUTE_REASON_LABEL: Record<string, string> = Object.fromEntries(
+  ORDER_DISPUTE_REASON_OPTIONS.map((o) => [o.value, o.label]),
+)
+
+export const RESOLUTION_TYPE_OPTIONS: { value: string; label: string }[] = [
+  { value: "refund", label: "Refund" },
+  { value: "price_adjustment", label: "Penyesuaian Harga" },
+  { value: "return", label: "Retur" },
+  { value: "other", label: "Lainnya" },
+]
+
+export const RESOLUTION_TYPE_LABEL: Record<string, string> = Object.fromEntries(
+  RESOLUTION_TYPE_OPTIONS.map((o) => [o.value, o.label]),
+)
+
+export const ORDER_DISPUTE_STATUS_LABEL: Record<string, string> = {
+  open: "Menunggu",
+  resolved: "Selesai",
+  rejected: "Ditolak",
+}
+
+// Timeline order for the stepper component
+export const ORDER_STATUS_FLOW: string[] = [
+  "pending_payment",
+  "awaiting_shipment",
+  "in_verification",
+  "completed",
+]

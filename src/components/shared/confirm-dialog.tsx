@@ -17,6 +17,7 @@ interface ConfirmDialogProps {
   cancelLabel?: string
   variant?: "default" | "destructive"
   loading?: boolean
+  children?: React.ReactNode
 }
 
 export function ConfirmDialog({
@@ -29,6 +30,7 @@ export function ConfirmDialog({
   cancelLabel = "Batal",
   variant = "default",
   loading = false,
+  children,
 }: ConfirmDialogProps) {
   if (!open) return null
 
@@ -38,6 +40,7 @@ export function ConfirmDialog({
       <div className="mx-4 w-full max-w-md rounded-3xl bg-white p-6 shadow-lg">
         <h3 className="text-lg font-semibold text-tenunara-charcoal">{title}</h3>
         <p className="mt-2 text-sm text-tenunara-teal">{description}</p>
+        {children && <div className="mt-4">{children}</div>}
         <div className="mt-6 flex justify-end gap-3">
           <button
             onClick={() => onOpenChange(false)}

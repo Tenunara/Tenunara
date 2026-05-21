@@ -467,8 +467,8 @@ export interface OrderWithDetails extends OrderRow {
   escrow: EscrowTransaction | null
   dispute: OrderDisputeRow | null
   waste_log: WasteDiversionLog | null
-  pengrajin: Pick<PengrajinRow, "nama" | "kota" | "kabupaten"> | null
-  umkm: Pick<UmkmRow, "nama_penjual" | "nama_toko" | "kota" | "kabupaten"> | null
+  pengrajin: Pick<PengrajinRow, "nama" | "email" | "nomor_telepon" | "kota" | "kabupaten" | "alamat" | "foto_profil_url"> | null
+  umkm: Pick<UmkmRow, "nama_penjual" | "nama_toko" | "email" | "nomor_telepon" | "kota" | "kabupaten" | "alamat" | "foto_profil_url"> | null
 }
 
 export interface OrderItemWithProduct extends OrderItem {
@@ -552,13 +552,6 @@ export interface CreateListingRequest {
 export interface CreateTransactionRequest {
   listing_id: string
   quantity_kg: number
-}
-
-export interface CreateDisputeRequest {
-  transaction_id: string
-  reason: DisputeReason
-  description: string
-  image_base64?: string
 }
 
 export interface SearchRequest {

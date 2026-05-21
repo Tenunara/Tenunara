@@ -17,6 +17,7 @@ import {
   AlertTriangle,
   Info,
   Scale,
+  Loader2,
 } from "lucide-react"
 import { GradeBadge } from "@/components/listing/grade-badge"
 import { ConfirmDialog } from "@/components/shared"
@@ -31,7 +32,7 @@ import {
   GRADE_BG,
   GRADE_TEXT,
 } from "@/lib/constants"
-import { deleteProduct } from "@/lib/api"
+import { deleteProduct, createOrder } from "@/lib/api"
 import type { ProductRow, ProductDefectDetail, Grade, UserRole } from "@/lib/types"
 
 interface ProductDetail extends ProductRow {
@@ -85,6 +86,7 @@ export default function ListingDetailPage() {
   const [quantity, setQuantity] = useState(1)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [creating, setCreating] = useState(false)
 
   // Read current user info
   const currentUserId = typeof window !== "undefined" ? localStorage.getItem("sb-user-id") || "" : ""
@@ -147,6 +149,20 @@ export default function ListingDetailPage() {
       setDeleteOpen(false)
     }
   }, [id, router])
+
+  const handleOrder = useCallback(async () => {
+    if (!id || !quantity) return
+    setCreating(true)
+    try {
+      const order = await createOrder({
+        items: [{ product_id: id, quantity_kg: quantity }],
+      })
+      router.push(`/dashboard/orders/${order.id}`)
+    } catch (err: any) {
+      alert(err.message)
+      setCreating(false)
+    }
+  }, [id, quantity, router])
 
   // ── Loading ──
   if (loading) return <Skeleton />
@@ -485,9 +501,17 @@ export default function ListingDetailPage() {
                     Minimum pembelian {formatNumber(product.minimum_order_kg)} kg
                   </p>
                 )}
-                <Button className="flex w-full items-center justify-center gap-2 rounded-xl bg-tenunara-terracotta px-6 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-tenunara-terracotta/90">
-                  <ShoppingCart className="h-4 w-4" />
-                  Pesan &middot; {formatCurrency(totalPrice)}
+                <Button
+                  onClick={handleOrder}
+                  disabled={creating}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-tenunara-terracotta px-6 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-tenunara-terracotta/90 disabled:opacity-50"
+                >
+                  {creating ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ShoppingCart className="h-4 w-4" />
+                  )}
+                  {creating ? "Memproses..." : `Pesan · ${formatCurrency(totalPrice)}`}
                 </Button>
               </div>
             )}
