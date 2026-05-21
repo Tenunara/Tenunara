@@ -521,6 +521,54 @@ export interface ConfirmShipmentRequest {
 }
 
 // ============================================================
+// CART TYPES
+// ============================================================
+
+export interface CartItem {
+  id: number
+  cart_id: string
+  product_id: string
+  quantity_kg: number
+  product: {
+    id: string
+    images_url: string[]
+    fabric_name: string
+    final_grade: Grade | null
+    price_per_kg: number
+    total_weight_kg: number
+    minimum_order_kg: number | null
+    umkm_id: string
+    status: string
+  }
+  created_at: string
+  updated_at: string
+}
+
+export interface CartGroup {
+  umkm_id: string
+  umkm_name: string
+  items: CartItem[]
+  subtotal: number
+}
+
+export interface CartData {
+  id: string
+  items_count: number
+  groups: CartGroup[]
+  grand_total: number
+}
+
+export interface CheckoutResponse {
+  orders: {
+    order_id: string
+    order_number: string
+    umkm_name: string
+    grand_total: number
+  }[]
+  count: number
+}
+
+// ============================================================
 // COMPOSITE TYPES (joins used in UI)
 // ============================================================
 export interface ListingWithSeller extends Listing {
