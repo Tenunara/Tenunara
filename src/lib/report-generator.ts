@@ -146,16 +146,26 @@ export function generateSustainabilityReport(
     width: 55px;
     height: 55px;
     border: 2px solid #000000;
-    font-family: Arial, sans-serif;
-    font-size: 6pt;
-    font-weight: bold;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 4px;
+    background-color: #ffffff;
+  }
+  .emblem-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+  .emblem-fallback {
+    font-family: Arial, sans-serif;
+    font-size: 6pt;
+    font-weight: bold;
     line-height: 1.2;
     text-transform: uppercase;
-    background-color: #ffffff;
+    text-align: center;
+    display: none;
   }
   .kop-text-main {
     font-family: Arial, sans-serif;
@@ -349,45 +359,57 @@ export function generateSustainabilityReport(
     font-weight: bold;
   }
   .blok-tanda-tangan {
-    height: 65px;
-    margin: 6px auto;
-    display: block;
+    min-height: 80px;
+    margin: 8px auto 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .segel-meterai-elektrik {
     width: 130px;
-    height: 55px;
+    min-height: 55px;
     border: 2px dashed #004d40;
     color: #004d40;
     font-size: 7.5pt;
     font-weight: bold;
-    line-height: 51px;
-    margin: 5px auto;
+    line-height: 1.2;
+    margin: 0 auto;
     text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 6px 4px;
     background-color: #e8f5e9;
     text-transform: uppercase;
   }
   .barcode-kepanduan-negara {
     width: 55px;
-    height: 55px;
+    min-height: 55px;
     border: 2px solid #000000;
     font-size: 6.5pt;
     font-weight: bold;
-    margin: 5px auto;
+    margin: 0 auto;
     padding: 3px;
     line-height: 1.1;
     text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
     background-color: #ffffff;
   }
   .nama-pejabat-terang {
     font-weight: bold;
     text-decoration: underline;
     text-transform: uppercase;
-    margin-bottom: 1px;
+    margin: 4px 0 1px;
   }
   .nomor-pegawai-id {
     font-size: 8pt;
     color: #333333;
     font-family: monospace;
+    margin-top: 2px;
   }
   .keterangan-log {
     margin-top: 0;
@@ -402,7 +424,10 @@ export function generateSustainabilityReport(
 <div class="kop-lembaga-pemerintah">
   <div class="kop-row">
     <div class="logo-col">
-      <div class="emblem-negara">LOGO<br>KEMEN<br>PERIN</div>
+      <div class="emblem-negara">
+        <img class="emblem-img" src="/images/kemenperin.png" alt="Logo Kementerian Perindustrian" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+        <span class="emblem-fallback">LOGO<br>KEMEN<br>PERIN</span>
+      </div>
     </div>
     <div class="text-col">
       <div class="kop-text-main">Republik Indonesia</div>
@@ -410,7 +435,10 @@ export function generateSustainabilityReport(
       <div class="kop-text-detail">Konsideran Integrasi Data Pengelolaan Limbah Produksi Tekstil dan Tekanan Emisi Karbon Aktual</div>
     </div>
     <div class="logo-col">
-      <div class="emblem-negara">LOGO<br>KEMEN<br>LHK</div>
+      <div class="emblem-negara">
+        <img class="emblem-img" src="/images/klhk.png" alt="Logo Kementerian Lingkungan Hidup dan Kehutanan" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
+        <span class="emblem-fallback">LOGO<br>KEMEN<br>LHK</span>
+      </div>
     </div>
   </div>
 </div>
