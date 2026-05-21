@@ -1,9 +1,9 @@
 // ============================================================
 // ENUMS
 // ============================================================
-type UserRole = "seller" | "buyer"
-type Material = "denim" | "cotton" | "polyester" | "mixed" | "other"
-type Color =
+export type UserRole = "seller" | "buyer"
+export type Material = "denim" | "cotton" | "polyester" | "mixed" | "other"
+export type Color =
   | "blue"
   | "black"
   | "white"
@@ -16,11 +16,11 @@ type Color =
   | "purple"
   | "pink"
   | "multicolor"
-type SizeEstimate = "small" | "medium" | "large"
-type Condition = "clean" | "slightly_worn" | "stained" | "mixed"
-type Grade = "A" | "B" | "C"
-type ListingStatus = "active" | "sold" | "archived"
-type TransactionStatus =
+export type SizeEstimate = "small" | "medium" | "large"
+export type Condition = "clean" | "slightly_worn" | "stained" | "mixed"
+export type Grade = "A" | "B" | "C"
+export type ListingStatus = "active" | "sold" | "archived"
+export type TransactionStatus =
   | "pending"
   | "escrow_held"
   | "shipped"
@@ -28,18 +28,18 @@ type TransactionStatus =
   | "completed"
   | "disputed"
   | "refunded"
-type DisputeReason =
+export type DisputeReason =
   | "material_not_match"
   | "grade_different"
   | "quantity_insufficient"
   | "poor_condition"
   | "other"
-type DisputeStatus = "open" | "resolved"
+export type DisputeStatus = "open" | "resolved"
 
 // ============================================================
 // DATABASE ROW INTERFACES
 // ============================================================
-interface Profile {
+export interface Profile {
   id: string
   name: string
   role: UserRole
@@ -47,7 +47,7 @@ interface Profile {
   created_at: string
 }
 
-interface Listing {
+export interface Listing {
   id: string
   seller_id: string
   title: string
@@ -64,7 +64,7 @@ interface Listing {
   created_at: string
 }
 
-interface Transaction {
+export interface Transaction {
   id: string
   listing_id: string
   buyer_id: string
@@ -76,7 +76,7 @@ interface Transaction {
   created_at: string
 }
 
-interface Dispute {
+export interface Dispute {
   id: string
   transaction_id: string
   raised_by: string
@@ -88,7 +88,7 @@ interface Dispute {
   created_at: string
 }
 
-interface ESGRecord {
+export interface ESGRecord {
   id: string
   user_id: string
   date: string
@@ -100,23 +100,23 @@ interface ESGRecord {
 // ============================================================
 // API RESPONSE TYPES
 // ============================================================
-interface PaginatedResponse<T> {
+export interface PaginatedResponse<T> {
   data: T[]
   total: number
   page: number
   limit: number
 }
 
-interface SingleResponse<T> {
+export interface SingleResponse<T> {
   data: T
 }
 
-interface ErrorResponse {
+export interface ErrorResponse {
   error: string
   details?: string
 }
 
-interface AnalysisResult {
+export interface AnalysisResult {
   material: Material
   dominant_color: Color
   size_estimate: SizeEstimate
@@ -125,19 +125,19 @@ interface AnalysisResult {
   confidence: number
 }
 
-interface ESGSummary {
+export interface ESGSummary {
   total_waste_kg: number
   total_co2_kg: number
   total_transactions: number
   trees_equivalent: number
 }
 
-interface ESGResponse {
+export interface ESGResponse {
   records: ESGRecord[]
   summary: ESGSummary
 }
 
-interface SearchResultItem {
+export interface SearchResultItem {
   id: string
   title: string
   material: Material
@@ -155,12 +155,12 @@ interface SearchResultItem {
 // ============================================================
 // COMPOSITE TYPES (joins used in UI)
 // ============================================================
-interface ListingWithSeller extends Listing {
+export interface ListingWithSeller extends Listing {
   seller_name: string
   seller_company: string | null
 }
 
-interface TransactionDetail extends Transaction {
+export interface TransactionDetail extends Transaction {
   listing: Pick<Listing, "id" | "title" | "material" | "color" | "grade" | "image_url" | "description">
   buyer: Profile
   seller: Profile
@@ -170,7 +170,7 @@ interface TransactionDetail extends Transaction {
 // ============================================================
 // FORM REQUEST TYPES
 // ============================================================
-interface CreateListingRequest {
+export interface CreateListingRequest {
   title: string
   description?: string
   material: Material
@@ -183,19 +183,19 @@ interface CreateListingRequest {
   image_base64?: string
 }
 
-interface CreateTransactionRequest {
+export interface CreateTransactionRequest {
   listing_id: string
   quantity_kg: number
 }
 
-interface CreateDisputeRequest {
+export interface CreateDisputeRequest {
   transaction_id: string
   reason: DisputeReason
   description: string
   image_base64?: string
 }
 
-interface SearchRequest {
+export interface SearchRequest {
   query: string
   filters?: {
     material?: Material | null
