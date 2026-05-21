@@ -27,6 +27,24 @@ import type { Profile } from "@/lib/types"
 
 const LOGO_SRC = "/images/logo.png"
 
+function CartIconBtn() {
+  const ctx = useCartSafe();
+  const itemsCount = ctx?.itemsCount ?? 0;
+
+  return (
+    <CartSheet>
+      <button className="relative flex h-9 w-9 items-center justify-center rounded-full text-tenunara-teal transition-colors hover:bg-tenunara-mint hover:text-tenunara-charcoal">
+        <ShoppingCart className="h-5 w-5" />
+        {itemsCount > 0 && (
+          <span className="absolute right-1.5 top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-tenunara-terracotta px-1 text-[8px] font-bold text-white">
+            {itemsCount > 99 ? "99+" : itemsCount}
+          </span>
+        )}
+      </button>
+    </CartSheet>
+  );
+}
+
 interface MarketplaceHeaderProps {
   user: Profile | null
   onLogout: () => Promise<void>
@@ -36,31 +54,12 @@ export function MarketplaceHeader({ user, onLogout }: MarketplaceHeaderProps) {
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
       router.push(`/dashboard/browse?q=${encodeURIComponent(searchQuery.trim())}`)
       setSearchQuery("")
     }
-  }
-
-  function CartIconBtn() {
-    const ctx = useCartSafe();
-    const itemsCount = ctx?.itemsCount ?? 0;
-
-    return (
-      <CartSheet>
-        <button className="relative flex h-9 w-9 items-center justify-center rounded-full text-tenunara-teal transition-colors hover:bg-tenunara-mint hover:text-tenunara-charcoal">
-          <ShoppingCart className="h-5 w-5" />
-          {itemsCount > 0 && (
-            <span className="absolute right-1.5 top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-tenunara-terracotta px-1 text-[8px] font-bold text-white">
-              {itemsCount > 99 ? "99+" : itemsCount}
-            </span>
-          )}
-        </button>
-      </CartSheet>
-    );
   }
 
   return (
