@@ -5,17 +5,13 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Menu,
-  X,
   LayoutDashboard,
   Package,
-  Search,
   ShoppingCart,
-  Scale,
   Leaf,
   LogOut,
-  User,
-  Plus,
   ChevronDown,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -78,9 +74,9 @@ const buyerLinks: NavLink[] = [
     icon: <LayoutDashboard className="h-4 w-4" />,
   },
   {
-    label: "Cari Material",
+    label: "Pencarian Cerdas",
     href: "/dashboard/browse",
-    icon: <Search className="h-4 w-4" />,
+    icon: <Sparkles className="h-4 w-4" />,
   },
   {
     label: "Pesanan Saya",
