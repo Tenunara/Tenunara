@@ -25,6 +25,8 @@ import type {
   ConfirmShipmentRequest,
   SemanticSearchResult,
   ParsedQuery,
+  CartData,
+  CheckoutResponse,
 } from "./types";
 import { AI_SIZE_RANGE_LABEL } from "./constants";
 
@@ -414,5 +416,46 @@ export async function resolveDispute(
       body: JSON.stringify(data),
     },
   );
+  return res.data;
+}
+
+// ─── Cart API Functions ───────────────────────────────────────
+
+export async function fetchCart(): Promise<{ data: CartData }> {
+  return fetchJson<{ data: CartData }>("/api/cart");
+}
+
+export async function addCartItem(
+  product_id: string,
+  quantity_kg: number,
+): Promise<{ items_count: number }> {
+  const res = await fetchJson<{ data: { items_count: number } }>("/api/cart/items", {
+    method: "POST",
+    body: JSON.stringify({ product_id, quantity_kg }),
+  });
+  return res.data;
+}
+
+export async function updateCartItem(
+  itemId: number,
+  quantity_kg: number,
+): Promise<void> {
+  await fetchJson(`/api/cart/items/${itemId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ quantity_kg }),
+  });
+}
+
+export async function removeCartItem(itemId: number): Promise<void> {
+  await fetch(`/api/cart/items/${itemId}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+}
+
+export async function checkoutCart(): Promise<CheckoutResponse> {
+  const res = await fetchJson<{ data: CheckoutResponse }>("/api/cart", {
+    method: "POST",
+  });
   return res.data;
 }
