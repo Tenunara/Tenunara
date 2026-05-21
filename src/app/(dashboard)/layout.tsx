@@ -45,6 +45,7 @@ export default function DashboardLayout({
         localStorage.removeItem("sb-refresh-token")
         localStorage.removeItem("sb-user-role")
         localStorage.removeItem("sb-user-id")
+        document.cookie = "sb-access-token=; path=/; max-age=0; SameSite=Lax"
         router.push("/login")
       })
   }, [router])
@@ -54,6 +55,7 @@ export default function DashboardLayout({
     localStorage.removeItem("sb-refresh-token")
     localStorage.removeItem("sb-user-role")
     localStorage.removeItem("sb-user-id")
+    document.cookie = "sb-access-token=; path=/; max-age=0; SameSite=Lax"
     toast.success("Berhasil keluar")
     router.push("/login")
   }

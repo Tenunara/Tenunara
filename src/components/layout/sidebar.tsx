@@ -46,8 +46,6 @@ const buyerItems: SidebarItem[] = [
   { label: "ESG", href: "/dashboard/esg", icon: <Leaf className="h-5 w-5" /> },
 ]
 
-// TODO: Also update this sidebar data if role-based routing changes in the future
-
 export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname()
   const isSeller = user.role === "seller" || user.role === "umkm"

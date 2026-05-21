@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
@@ -9,7 +9,15 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 
-export default function LoginPage() {
+function setAuthCookie(token: string, maxAge: number = 3600) {
+  document.cookie = `sb-access-token=${token}; path=/; max-age=${maxAge}; SameSite=Lax`
+}
+
+function clearAuthCookie() {
+  document.cookie = "sb-access-token=; path=/; max-age=0; SameSite=Lax"
+}
+
+function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirect = searchParams.get("redirect") || "/dashboard"
@@ -19,6 +27,31 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Auto-redirect if already logged in with valid token
+  useEffect(() => {
+    const token = localStorage.getItem("sb-access-token")
+    if (!token) return
+
+    fetch("/api/auth/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (res.ok) {
+          setAuthCookie(token)
+          router.push("/dashboard")
+        } else {
+          localStorage.removeItem("sb-access-token")
+          localStorage.removeItem("sb-refresh-token")
+          localStorage.removeItem("sb-user-role")
+          localStorage.removeItem("sb-user-id")
+          clearAuthCookie()
+        }
+      })
+      .catch(() => {
+        // Network error — stay on login page
+      })
+  }, [router])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -44,9 +77,11 @@ export default function LoginPage() {
       localStorage.setItem("sb-user-role", data.user.role)
       localStorage.setItem("sb-user-id", data.user.id)
 
+      // Set cookie for middleware (server-side auth check)
+      setAuthCookie(data.session.access_token)
+
       toast.success("Berhasil masuk")
       router.push(redirect)
-      router.refresh()
     } catch (err) {
       const message = err instanceof Error ? err.message : "Terjadi kesalahan"
       setError(message)
@@ -60,8 +95,8 @@ export default function LoginPage() {
     setError(null)
 
     const demoAccounts: Record<string, { email: string; password: string }> = {
-      pengrajin: { email: "pengrajin@tenunara.demo", password: "demo1234" },
-      umkm: { email: "umkm@tenunara.demo", password: "demo1234" },
+      pengrajin: { email: "pengerajin@email.com", password: "david123" },
+      umkm: { email: "umkm@email.com", password: "david123" },
     }
 
     try {
@@ -83,9 +118,10 @@ export default function LoginPage() {
       localStorage.setItem("sb-user-role", data.user.role)
       localStorage.setItem("sb-user-id", data.user.id)
 
+      setAuthCookie(data.session.access_token)
+
       toast.success("Berhasil masuk (demo)")
       router.push("/dashboard")
-      router.refresh()
     } catch (err) {
       const message = err instanceof Error ? err.message : "Terjadi kesalahan"
       setError(message)
@@ -110,7 +146,7 @@ export default function LoginPage() {
           >
             <span className="text-lg">🏭</span>
             <span className="text-xs font-semibold text-tenunara-charcoal">Demo UMKM</span>
-            <span className="text-[10px] text-tenunara-teal/60">umkm@tenunara.demo</span>
+            <span className="text-[10px] text-tenunara-teal/60">umkm@email.com</span>
           </button>
           <button
             type="button"
@@ -120,7 +156,7 @@ export default function LoginPage() {
           >
             <span className="text-lg">🧵</span>
             <span className="text-xs font-semibold text-tenunara-charcoal">Demo Pengrajin</span>
-            <span className="text-[10px] text-tenunara-teal/60">pengrajin@tenunara.demo</span>
+            <span className="text-[10px] text-tenunara-teal/60">pengerajin@email.com</span>
           </button>
         </div>
 
@@ -199,5 +235,23 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="w-full max-w-sm">
+          <div className="rounded-3xl bg-white p-8 shadow-sm">
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-tenunara-terracotta" />
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   )
 }

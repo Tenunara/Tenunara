@@ -7,9 +7,12 @@ export default function DashboardPage() {
   const router = useRouter()
 
   useEffect(() => {
-    // TODO: Read actual user role from Profile context/store
-    // For now we redirect to a default page
-    // router.push("/dashboard/listings")
+    const role = localStorage.getItem("sb-user-role")
+    if (role === "umkm") {
+      router.push("/dashboard/listings")
+    } else {
+      router.push("/dashboard/browse")
+    }
   }, [router])
 
   return null

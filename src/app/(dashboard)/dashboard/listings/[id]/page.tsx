@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
+// TODO: Replace mock fetch with real API call when BE endpoint is ready
 import Image from "next/image"
 import { ArrowLeft, ImageOff, MapPin, Store, Package, Edit3, Archive, ShoppingCart } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -21,8 +22,11 @@ async function fetchListing(_id: string): Promise<ListingWithSeller> {
   return json.data as ListingWithSeller
 }
 
-// TODO: Read actual user ID from auth context
-const MOCK_USER_ID = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+// Read actual user ID from localStorage (set during login/register)
+const getUserId = (): string => {
+  if (typeof window === "undefined") return ""
+  return localStorage.getItem("sb-user-id") || ""
+}
 
 export default function ListingDetailPage() {
   const params = useParams()
@@ -86,7 +90,7 @@ export default function ListingDetailPage() {
     )
   }
 
-  const isSeller = listing.seller_id === MOCK_USER_ID
+  const isSeller = listing.seller_id === getUserId()
   const isSold = listing.status === "sold"
 
   return (

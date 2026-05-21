@@ -166,17 +166,30 @@ function RegisterForm() {
         throw new Error(data.error || "Gagal mendaftar")
       }
 
-      // Store session for auto-login
-      if (data.session) {
-        localStorage.setItem("sb-access-token", data.session.access_token)
-        localStorage.setItem("sb-refresh-token", data.session.refresh_token)
-      }
-      localStorage.setItem("sb-user-role", role)
-      localStorage.setItem("sb-user-id", data.user?.id || "")
+      // Auto-login after registration (register API doesn't return session)
+      const loginRes = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      })
 
-      toast.success("Pendaftaran berhasil!")
-      router.push("/dashboard")
-      router.refresh()
+      const loginData = await loginRes.json()
+
+      if (loginRes.ok && loginData.session) {
+        localStorage.setItem("sb-access-token", loginData.session.access_token)
+        localStorage.setItem("sb-refresh-token", loginData.session.refresh_token)
+        localStorage.setItem("sb-user-role", loginData.user.role)
+        localStorage.setItem("sb-user-id", loginData.user.id)
+
+        // Set cookie for middleware
+        document.cookie = `sb-access-token=${loginData.session.access_token}; path=/; max-age=3600; SameSite=Lax`
+
+        toast.success("Pendaftaran berhasil!")
+        router.push("/dashboard")
+      } else {
+        toast.success("Pendaftaran berhasil! Silakan masuk.")
+        router.push("/login")
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Gagal mendaftar. Silakan coba lagi."
       setErrors((prev) => ({ ...prev, submit: message }))
