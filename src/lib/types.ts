@@ -565,3 +565,36 @@ export interface SearchRequest {
   }
   limit?: number
 }
+
+// ============================================================
+// SEMANTIC SEARCH TYPES
+// ============================================================
+export interface SemanticSearchResult {
+  product_id:        string;
+  umkm_id:           string;
+  nama_toko:         string;
+  fabric_type_name:  string;
+  final_grade:       Grade;
+  total_weight_kg:   number;
+  price_per_kg:      number;
+  minimum_order_kg:  number | null;
+  ai_dominant_color: string;
+  ai_size_range:     string;
+  ai_pattern:        string;
+  kota:              string;
+  is_negotiable:     boolean;
+  final_score:       number;
+  score_breakdown: {
+    semantic:     number;
+    hard_filter:  number;
+    geo:          number;
+  };
+}
+
+export interface ParsedQuery {
+  fabric_type?: string | null;
+  color?: string | null;
+  min_weight_kg?: number | null;
+  grade?: string | null;
+  search_text: string;
+}

@@ -5,12 +5,10 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Package,
-  Search,
   ShoppingCart,
-  Scale,
   Leaf,
-  Plus,
   PackagePlus,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Profile } from "@/lib/types";
@@ -56,9 +54,9 @@ const buyerItems: SidebarItem[] = [
     icon: <LayoutDashboard className="h-5 w-5" />,
   },
   {
-    label: "Cari Material",
+    label: "Pencarian Cerdas",
     href: "/dashboard/browse",
-    icon: <Search className="h-5 w-5" />,
+    icon: <Sparkles className="h-5 w-5" />,
   },
   {
     label: "Pesanan Saya",

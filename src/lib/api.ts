@@ -23,6 +23,8 @@ import type {
   CreateDisputeRequest,
   ResolveDisputeRequest,
   ConfirmShipmentRequest,
+  SemanticSearchResult,
+  ParsedQuery,
 } from "./types";
 import { AI_SIZE_RANGE_LABEL } from "./constants";
 
@@ -362,6 +364,42 @@ export async function submitDispute(
     },
   );
   return res.data;
+}
+
+// ─── Semantic Search API ──────────────────────────────────────
+
+export interface SemanticSearchResponse {
+  results: SemanticSearchResult[];
+  parsed_query: ParsedQuery;
+  from_cache: boolean;
+}
+
+export async function searchSemantic(
+  query: string,
+  pengrajinKota?: string,
+): Promise<SemanticSearchResponse> {
+  const token = getToken();
+  const userId = typeof window !== "undefined" ? localStorage.getItem("sb-user-id") : null;
+
+  const res = await fetch("/api/search/semantic", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({
+      query,
+      pengrajin_id: userId ?? null,
+      pengrajin_kota: pengrajinKota ?? null,
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.error || "Pencarian gagal");
+  }
+
+  return res.json();
 }
 
 export async function resolveDispute(
