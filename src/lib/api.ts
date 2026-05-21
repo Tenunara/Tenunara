@@ -318,11 +318,12 @@ export async function cancelOrder(
   return res.data;
 }
 
-export async function payOrder(id: string): Promise<OrderRow> {
+export async function payOrder(id: string, shippingOption?: string, paymentMethod?: string): Promise<OrderRow> {
   const res = await fetchJson<SingleResponse<OrderRow>>(
     `/api/orders/${id}/pay`,
     {
       method: "POST",
+      body: JSON.stringify({ shipping_option: shippingOption, payment_method: paymentMethod }),
     },
   );
   return res.data;

@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/navbar";
-import { Sidebar } from "@/components/layout/sidebar";
 import { LoadingSpinner } from "@/components/shared";
 import { toast } from "sonner";
 import type { PengrajinRow, UmkmRow, UserRole } from "@/lib/types";
@@ -86,15 +85,8 @@ export default function DashboardLayout({
 
   return (
     <div className="flex min-h-screen flex-col bg-tenunara-canvas">
-      <div className="lg:hidden">
-        <Navbar user={userProfile} onLogout={handleLogout} />
-      </div>
-      <div className="flex flex-1">
-        <Sidebar user={userProfile} />
-        <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">
-          {children}
-        </main>
-      </div>
+      <Navbar user={userProfile} onLogout={handleLogout} />
+      <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">{children}</main>
     </div>
   );
 }

@@ -3,6 +3,33 @@ import { jsonResponse, errorResponse } from "@/lib/api-response";
 import { getAuthenticatedUser, AuthError } from "@/lib/api-auth";
 import type { CreateOrderRequest } from "@/lib/types";
 
+const SHIPPING_COST_MAP: Record<string, number> = {
+  reguler: 10000,
+  express: 20000,
+  same_day: 35000,
+};
+
+const SHIPPING_OPTION_LABEL_MAP: Record<string, string> = {
+  reguler: "Reguler (3-5 hari)",
+  express: "Express (1-2 hari)",
+  same_day: "Same Day",
+};
+
+const PAYMENT_METHOD_LABEL_MAP: Record<string, string> = {
+  transfer_bank: "Transfer Bank",
+  virtual_account: "Virtual Account",
+  ewallet: "E-Wallet",
+};
+
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
 // ─── GET /api/orders ───────────────────────────────────────────────
 // List orders — pengrajin sees own orders, UMKM sees incoming orders
 export async function GET(request: Request) {
@@ -183,9 +210,20 @@ export async function POST(request: Request) {
       };
     });
 
-    const shippingCost = 15000; // dummy flat shipping
+    const shippingCost = body.shipping_option
+      ? SHIPPING_COST_MAP[body.shipping_option] ?? 15000
+      : 15000; // dummy flat shipping
     const appFee = Math.round(subtotal * 0.025); // 2.5% app fee
     const grandTotal = subtotal + shippingCost + appFee;
+
+    // Prefix notes with shipping/payment info for display on order detail
+    const shippingLabel = SHIPPING_OPTION_LABEL_MAP[body.shipping_option || ""] || "";
+    const paymentLabel = PAYMENT_METHOD_LABEL_MAP[body.payment_method || ""] || "";
+    const metaLines: string[] = [];
+    if (shippingLabel) metaLines.push(`Pengiriman: ${shippingLabel} (${formatCurrency(shippingCost)})`);
+    if (paymentLabel) metaLines.push(`Pembayaran: ${paymentLabel}`);
+    const metaPrefix = metaLines.length > 0 ? `===${metaLines.join(" | ")}===\n` : "";
+    const orderNotes = body.notes ? `${metaPrefix}${body.notes}` : metaPrefix || null;
 
     // Create order, items, and stock reservations
     const { data: order, error: createError } = await supabaseAdmin
@@ -198,7 +236,7 @@ export async function POST(request: Request) {
         shipping_cost: shippingCost,
         app_fee: appFee,
         grand_total: grandTotal,
-        notes: body.notes || null,
+        notes: orderNotes,
       })
       .select()
       .single();

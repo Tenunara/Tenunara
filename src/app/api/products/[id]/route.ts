@@ -20,6 +20,20 @@ export async function GET(
       return errorResponse("Produk tidak ditemukan", 404);
     }
 
+    // Get available stock (considering reservations)
+    let availableStockKg = Number(product.total_weight_kg) || 0;
+    try {
+      const { data: reservedData } = await supabaseAdmin.rpc(
+        "get_available_stock",
+        { product_uuid: id },
+      );
+      if (reservedData !== null && reservedData !== undefined) {
+        availableStockKg = Number(reservedData);
+      }
+    } catch {
+      // RPC may not exist yet — fall back to total_weight_kg
+    }
+
     // Get seller (UMKM) info
     const { data: seller } = await supabaseAdmin
       .from("umkm")
@@ -30,6 +44,7 @@ export async function GET(
     return jsonResponse({
       data: {
         ...product,
+        available_stock_kg: availableStockKg,
         fabric_name: product.fabric_types?.name,
         fabric_category: product.fabric_types?.category,
         defects: product.product_defect_details || [],

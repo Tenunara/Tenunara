@@ -2,6 +2,33 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { jsonResponse, errorResponse } from "@/lib/api-response";
 import { getAuthenticatedUser, AuthError } from "@/lib/api-auth";
 
+const SHIPPING_COST_MAP: Record<string, number> = {
+  reguler: 10000,
+  express: 20000,
+  same_day: 35000,
+};
+
+const SHIPPING_OPTION_LABEL_MAP: Record<string, string> = {
+  reguler: "Reguler (3-5 hari)",
+  express: "Express (1-2 hari)",
+  same_day: "Same Day",
+};
+
+const PAYMENT_METHOD_LABEL_MAP: Record<string, string> = {
+  transfer_bank: "Transfer Bank",
+  virtual_account: "Virtual Account",
+  ewallet: "E-Wallet",
+};
+
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
 // ─── POST /api/orders/[id]/pay ─────────────────────────────────────
 // Simulate payment — pengrajin only, order must be pending_payment
 export async function POST(
@@ -19,7 +46,7 @@ export async function POST(
     // Fetch order
     const { data: order, error: fetchError } = await supabaseAdmin
       .from("orders")
-      .select("id, pengrajin_id, status, grand_total")
+      .select("id, pengrajin_id, status, subtotal, shipping_cost, app_fee, grand_total, notes")
       .eq("id", id)
       .single();
 
@@ -35,12 +62,38 @@ export async function POST(
       return errorResponse("Pesanan tidak dalam status menunggu pembayaran", 400);
     }
 
-    // Simulate payment: update status to awaiting_shipment
+    const body = await request.json().catch(() => ({}));
+    const shippingOption = body.shipping_option as string | undefined;
+    const paymentMethod = body.payment_method as string | undefined;
+
+    // Recalculate shipping cost and grand total
+    const newShippingCost = shippingOption
+      ? (SHIPPING_COST_MAP[shippingOption] ?? order.shipping_cost)
+      : order.shipping_cost;
+    const newGrandTotal = Number(order.subtotal) + newShippingCost + Number(order.app_fee);
+
+    // Build notes metadata with shipping/payment info
+    let newNotes = order.notes || "";
+    const shippingLabel = shippingOption ? SHIPPING_OPTION_LABEL_MAP[shippingOption] || "" : "";
+    const paymentLabel = paymentMethod ? PAYMENT_METHOD_LABEL_MAP[paymentMethod] || "" : "";
+    const metaLines: string[] = [];
+    if (shippingLabel) metaLines.push(`Pengiriman: ${shippingLabel} (${formatCurrency(newShippingCost)})`);
+    if (paymentLabel) metaLines.push(`Pembayaran: ${paymentLabel}`);
+    const metaPrefix = metaLines.length > 0 ? `===${metaLines.join(" | ")}===\n` : "";
+
+    // Remove any existing meta prefix, then prepend new one
+    const cleanNotes = newNotes.replace(/^===.*?===\n?/, "");
+    newNotes = metaPrefix + cleanNotes;
+
+    // Simulate payment: update status and recalculate totals
     const { data: updated, error: updateError } = await supabaseAdmin
       .from("orders")
       .update({
         status: "awaiting_shipment",
         payment_simulated_at: new Date().toISOString(),
+        shipping_cost: newShippingCost,
+        grand_total: newGrandTotal,
+        notes: newNotes || null,
       })
       .eq("id", id)
       .select()

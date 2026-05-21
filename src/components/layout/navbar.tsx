@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import type { Profile } from "@/lib/types";
+import { Sidebar } from "@/components/layout/sidebar";
 
 const LOGO = "TENUNARA";
 
@@ -106,6 +107,11 @@ export function Navbar({ user, onLogout }: NavbarProps) {
   const isSeller = user?.role === "seller" || user?.role === "umkm";
   const navLinks = isSeller ? sellerLinks : buyerLinks;
 
+  const handleMobileLogout = async () => {
+    setMobileOpen(false);
+    await onLogout();
+  };
+
   return (
     <header
       className={cn(
@@ -132,32 +138,7 @@ export function Navbar({ user, onLogout }: NavbarProps) {
                 <span className="sr-only">Buka menu</span>
               </SheetTrigger>
               <SheetContent side="left" className="w-72 p-0">
-                <SheetHeader className="border-b border-border px-6 py-4">
-                  <SheetTitle className="flex items-center gap-2 text-left text-lg font-bold text-tenunara-charcoal">
-                    <span className="text-tenunara-terracotta">
-                      {LOGO_MARK}
-                    </span>
-                    {LOGO}
-                  </SheetTitle>
-                </SheetHeader>
-                <nav className="flex flex-col gap-1 p-4">
-                  {navLinks.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      onClick={() => setMobileOpen(false)}
-                      className={cn(
-                        "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors duration-200",
-                        isActive(link.href)
-                          ? "bg-tenunara-mint text-tenunara-charcoal"
-                          : "text-tenunara-teal hover:bg-tenunara-mint/50 hover:text-tenunara-charcoal",
-                      )}
-                    >
-                      {link.icon}
-                      {link.label}
-                    </Link>
-                  ))}
-                </nav>
+                <Sidebar mobile user={user} onLogout={handleMobileLogout} />
               </SheetContent>
             </Sheet>
           )}

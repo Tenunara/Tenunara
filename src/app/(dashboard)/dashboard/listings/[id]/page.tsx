@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useEffect, useState, useCallback } from "react"
-import { useParams, useRouter } from "next/navigation"
-import Image from "next/image"
+import { useEffect, useState, useCallback } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   ArrowLeft,
   ImageOff,
@@ -18,12 +18,12 @@ import {
   Info,
   Scale,
   Loader2,
-} from "lucide-react"
-import { GradeBadge } from "@/components/listing/grade-badge"
-import { ConfirmDialog } from "@/components/shared"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { formatCurrency, formatDate, formatNumber, cn } from "@/lib/utils"
+} from "lucide-react";
+import { GradeBadge } from "@/components/listing/grade-badge";
+import { ConfirmDialog } from "@/components/shared";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { formatCurrency, formatDate, formatNumber, cn } from "@/lib/utils";
 import {
   PRODUCTION_SOURCE_LABEL,
   HYGIENE_STATUS_LABEL,
@@ -31,19 +31,25 @@ import {
   DEFECT_TYPE_LABEL,
   GRADE_BG,
   GRADE_TEXT,
-} from "@/lib/constants"
-import { deleteProduct, createOrder } from "@/lib/api"
-import type { ProductRow, ProductDefectDetail, Grade, UserRole } from "@/lib/types"
+} from "@/lib/constants";
+import { deleteProduct, createOrder } from "@/lib/api";
+import type {
+  ProductRow,
+  ProductDefectDetail,
+  Grade,
+  UserRole,
+} from "@/lib/types";
 
 interface ProductDetail extends ProductRow {
-  fabric_name: string
-  fabric_category: string
-  defects: ProductDefectDetail[]
+  fabric_name: string;
+  fabric_category: string;
+  defects: ProductDefectDetail[];
+  available_stock_kg?: number;
   seller: {
-    nama_penjual: string
-    nama_toko: string
-    kota: string
-  } | null
+    nama_penjual: string;
+    nama_toko: string;
+    kota: string;
+  } | null;
 }
 
 function Skeleton() {
@@ -61,7 +67,7 @@ function Skeleton() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function Spec({ label, value }: { label: string; value: string }) {
@@ -70,102 +76,107 @@ function Spec({ label, value }: { label: string; value: string }) {
       <p className="text-xs text-tenunara-teal/70">{label}</p>
       <p className="text-sm font-medium text-tenunara-charcoal">{value}</p>
     </div>
-  )
+  );
 }
 
 export default function ListingDetailPage() {
-  const params = useParams()
-  const router = useRouter()
-  const id = params.id as string
+  const params = useParams();
+  const router = useRouter();
+  const id = params.id as string;
 
-  const [product, setProduct] = useState<ProductDetail | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [imgError, setImgError] = useState(false)
-  const [selectedImage, setSelectedImage] = useState(0)
-  const [quantity, setQuantity] = useState(1)
-  const [deleteOpen, setDeleteOpen] = useState(false)
-  const [deleting, setDeleting] = useState(false)
-  const [creating, setCreating] = useState(false)
+  const [product, setProduct] = useState<ProductDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [imgError, setImgError] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [quantity, setQuantity] = useState(1);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [creating, setCreating] = useState(false);
 
   // Read current user info
-  const currentUserId = typeof window !== "undefined" ? localStorage.getItem("sb-user-id") || "" : ""
-  const currentUserRole = (typeof window !== "undefined" ? localStorage.getItem("sb-user-role") : null) as UserRole | null
+  const currentUserId =
+    typeof window !== "undefined"
+      ? localStorage.getItem("sb-user-id") || ""
+      : "";
+  const currentUserRole = (
+    typeof window !== "undefined" ? localStorage.getItem("sb-user-role") : null
+  ) as UserRole | null;
 
   // Fetch product
   useEffect(() => {
-    const token = localStorage.getItem("sb-access-token")
+    const token = localStorage.getItem("sb-access-token");
     if (!token) {
-      router.push("/login")
-      return
+      router.push("/login");
+      return;
     }
 
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
 
     fetch(`/api/products/${id}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(async (res) => {
-        if (res.status === 404) return null
+        if (res.status === 404) return null;
         if (!res.ok) {
-          const body = await res.json().catch(() => ({}))
-          throw new Error(body.error || "Gagal memuat detail produk")
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.error || "Gagal memuat detail produk");
         }
-        return res.json()
+        return res.json();
       })
       .then((json) => {
         if (!json?.data) {
-          setProduct(null)
-          setLoading(false)
-          return
+          setProduct(null);
+          setLoading(false);
+          return;
         }
 
-        const p = json.data as ProductDetail
+        const p = json.data as ProductDetail;
 
         // Another UMKM → redirect
         if (currentUserRole === "umkm" && p.umkm_id !== currentUserId) {
-          router.push("/dashboard")
-          return
+          router.push("/dashboard");
+          return;
         }
 
-        setProduct(p)
-        setLoading(false)
+        setProduct(p);
+        setLoading(false);
       })
       .catch((err) => {
-        setError(err.message)
-        setLoading(false)
-      })
-  }, [id, router, currentUserId, currentUserRole])
+        setError(err.message);
+        setLoading(false);
+      });
+  }, [id, router, currentUserId, currentUserRole]);
 
   const handleDelete = useCallback(async () => {
-    setDeleting(true)
+    setDeleting(true);
     try {
-      await deleteProduct(id)
-      router.push("/dashboard/listings")
+      await deleteProduct(id);
+      router.push("/dashboard/listings");
     } catch (err) {
-      console.error("Delete failed:", err)
-      setDeleting(false)
-      setDeleteOpen(false)
+      console.error("Delete failed:", err);
+      setDeleting(false);
+      setDeleteOpen(false);
     }
-  }, [id, router])
+  }, [id, router]);
 
   const handleOrder = useCallback(async () => {
-    if (!id || !quantity) return
-    setCreating(true)
+    if (!id || !quantity) return;
+    setCreating(true);
     try {
       const order = await createOrder({
         items: [{ product_id: id, quantity_kg: quantity }],
-      })
-      router.push(`/dashboard/orders/${order.id}`)
+      });
+      router.push(`/dashboard/orders/${order.id}`);
     } catch (err: any) {
-      alert(err.message)
-      setCreating(false)
+      alert(err.message);
+      setCreating(false);
     }
-  }, [id, quantity, router])
+  }, [id, quantity, router]);
 
   // ── Loading ──
-  if (loading) return <Skeleton />
+  if (loading) return <Skeleton />;
 
   // ── Error ──
   if (error) {
@@ -174,15 +185,20 @@ export default function ListingDetailPage() {
         <div className="flex flex-col items-center gap-4 rounded-3xl bg-white p-12 text-center shadow-sm">
           <AlertTriangle className="h-12 w-12 text-destructive" />
           <div>
-            <p className="font-semibold text-tenunara-charcoal">Gagal memuat produk</p>
+            <p className="font-semibold text-tenunara-charcoal">
+              Gagal memuat produk
+            </p>
             <p className="mt-1 text-sm text-tenunara-teal">{error}</p>
           </div>
-          <Button onClick={() => window.location.reload()} className="rounded-xl bg-tenunara-terracotta px-6 py-2 text-sm font-semibold text-white hover:bg-tenunara-terracotta/90">
+          <Button
+            onClick={() => window.location.reload()}
+            className="rounded-xl bg-tenunara-terracotta px-6 py-2 text-sm font-semibold text-white hover:bg-tenunara-terracotta/90"
+          >
             Coba Lagi
           </Button>
         </div>
       </div>
-    )
+    );
   }
 
   // ── Not found ──
@@ -192,29 +208,41 @@ export default function ListingDetailPage() {
         <div className="flex flex-col items-center gap-4 rounded-3xl bg-white p-12 text-center shadow-sm">
           <Package className="h-12 w-12 text-tenunara-teal/30" />
           <div>
-            <p className="font-semibold text-tenunara-charcoal">Produk tidak ditemukan</p>
-            <p className="mt-1 text-sm text-tenunara-teal">Produk yang Anda cari tidak tersedia atau telah dihapus.</p>
+            <p className="font-semibold text-tenunara-charcoal">
+              Produk tidak ditemukan
+            </p>
+            <p className="mt-1 text-sm text-tenunara-teal">
+              Produk yang Anda cari tidak tersedia atau telah dihapus.
+            </p>
           </div>
-          <Button onClick={() => router.push("/dashboard/listings")} className="rounded-xl bg-tenunara-terracotta px-6 py-2 text-sm font-semibold text-white hover:bg-tenunara-terracotta/90">
+          <Button
+            onClick={() => router.push("/dashboard/listings")}
+            className="rounded-xl bg-tenunara-terracotta px-6 py-2 text-sm font-semibold text-white hover:bg-tenunara-terracotta/90"
+          >
             Kembali
           </Button>
         </div>
       </div>
-    )
+    );
   }
 
   // ── Role checks ──
-  const isOwner = product.umkm_id === currentUserId
-  const isCustomer = currentUserRole === "pengrajin" || currentUserRole === "buyer"
-  const isSold = product.status === "sold"
+  const isOwner = product.umkm_id === currentUserId;
+  const isCustomer =
+    currentUserRole === "pengrajin" || currentUserRole === "buyer";
+  const isSold = product.status === "sold";
 
   // Derived display values
-  const colorName = product.ai_dominant_color?.split(";")[1] || product.ai_dominant_color || "-"
-  const grade: Grade = product.final_grade || product.ai_suggested_grade || "B"
-  const images = Array.isArray(product.images_url) ? product.images_url : []
-  const mainImage = images[selectedImage] || null
-  const title = `${product.fabric_name || "Kain"} ${product.total_weight_kg}kg`
-  const totalPrice = product.price_per_kg * quantity
+  const colorName =
+    product.ai_dominant_color?.split(";")[1] ||
+    product.ai_dominant_color ||
+    "-";
+  const grade: Grade = product.final_grade || product.ai_suggested_grade || "B";
+  const images = Array.isArray(product.images_url) ? product.images_url : [];
+  const mainImage = images[selectedImage] || null;
+  const title = `${product.fabric_name || "Kain"} ${product.total_weight_kg}kg`;
+  const availableStock = product.available_stock_kg ?? product.total_weight_kg;
+  const totalPrice = product.price_per_kg * quantity;
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -236,7 +264,9 @@ export default function ListingDetailPage() {
               <div className="flex h-full items-center justify-center">
                 <div className="text-center">
                   <ImageOff className="mx-auto h-12 w-12 text-tenunara-teal/30" />
-                  <p className="mt-2 text-sm text-tenunara-teal/50">Foto tidak tersedia</p>
+                  <p className="mt-2 text-sm text-tenunara-teal/50">
+                    Foto tidak tersedia
+                  </p>
                 </div>
               </div>
             ) : (
@@ -278,7 +308,11 @@ export default function ListingDetailPage() {
                       : "border-transparent hover:border-tenunara-teal/30",
                   )}
                 >
-                  <img src={url} alt="" className="h-full w-full object-cover" />
+                  <img
+                    src={url}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
                 </button>
               ))}
             </div>
@@ -292,7 +326,10 @@ export default function ListingDetailPage() {
               </h3>
               <div className="space-y-1.5">
                 {product.defects.map((d, i) => (
-                  <div key={i} className="flex items-center justify-between rounded-xl border border-border px-3 py-2">
+                  <div
+                    key={i}
+                    className="flex items-center justify-between rounded-xl border border-border px-3 py-2"
+                  >
                     <span className="text-sm text-tenunara-charcoal">
                       {DEFECT_TYPE_LABEL[d.defect_type] || d.defect_type}
                     </span>
@@ -347,11 +384,14 @@ export default function ListingDetailPage() {
             <div>
               <p className="text-2xl font-bold text-tenunara-terracotta">
                 {formatCurrency(product.price_per_kg)}
-                <span className="text-sm font-normal text-tenunara-teal"> /kg</span>
+                <span className="text-sm font-normal text-tenunara-teal">
+                  {" "}
+                  /kg
+                </span>
               </p>
               <div className="mt-0.5 flex items-center gap-2">
                 <p className="text-sm text-tenunara-teal">
-                  {formatNumber(product.total_weight_kg)} kg tersedia
+                  {formatNumber(availableStock)} kg tersedia
                 </p>
                 {product.is_negotiable && (
                   <span className="rounded-full bg-tenunara-mint px-2 py-0.5 text-[10px] font-medium text-tenunara-terracotta">
@@ -369,17 +409,44 @@ export default function ListingDetailPage() {
               <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
                 <Spec label="Jenis Kain" value={product.fabric_name || "-"} />
                 <Spec label="Warna Dominan" value={colorName} />
-                <Spec label="Ukuran" value={AI_SIZE_RANGE_LABEL[product.ai_size_range ?? ""] || product.ai_size_range || "-"} />
+                <Spec
+                  label="Ukuran"
+                  value={
+                    AI_SIZE_RANGE_LABEL[product.ai_size_range ?? ""] ||
+                    product.ai_size_range ||
+                    "-"
+                  }
+                />
                 <Spec label="Grade" value={`Grade ${grade}`} />
-                <Spec label="Sumber" value={PRODUCTION_SOURCE_LABEL[product.production_source] || product.production_source} />
-                <Spec label="Kebersihan" value={HYGIENE_STATUS_LABEL[product.hygiene_status] || product.hygiene_status} />
-                <Spec label="Berat" value={`${formatNumber(product.total_weight_kg)} kg`} />
-                <Spec label="Harga" value={`${formatCurrency(product.price_per_kg)} /kg`} />
+                <Spec
+                  label="Sumber"
+                  value={
+                    PRODUCTION_SOURCE_LABEL[product.production_source] ||
+                    product.production_source
+                  }
+                />
+                <Spec
+                  label="Kebersihan"
+                  value={
+                    HYGIENE_STATUS_LABEL[product.hygiene_status] ||
+                    product.hygiene_status
+                  }
+                />
+                <Spec
+                  label="Berat"
+                  value={`${formatNumber(product.total_weight_kg)} kg`}
+                />
+                <Spec
+                  label="Harga"
+                  value={`${formatCurrency(product.price_per_kg)} /kg`}
+                />
               </div>
             </div>
 
             {/* Additional details */}
-            {(product.fiber_composition || product.minimum_order_kg || product.has_odor) && (
+            {(product.fiber_composition ||
+              product.minimum_order_kg ||
+              product.has_odor) && (
               <div className="rounded-2xl border border-border p-4">
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-tenunara-teal">
                   Detail Tambahan
@@ -388,19 +455,25 @@ export default function ListingDetailPage() {
                   {product.fiber_composition && (
                     <div className="flex items-center gap-2 text-sm">
                       <Building2 className="h-4 w-4 text-tenunara-teal" />
-                      <span className="text-tenunara-charcoal">{product.fiber_composition}</span>
+                      <span className="text-tenunara-charcoal">
+                        {product.fiber_composition}
+                      </span>
                     </div>
                   )}
                   {product.minimum_order_kg && (
                     <div className="flex items-center gap-2 text-sm">
                       <Scale className="h-4 w-4 text-tenunara-teal" />
-                      <span className="text-tenunara-charcoal">Min. order {formatNumber(product.minimum_order_kg)} kg</span>
+                      <span className="text-tenunara-charcoal">
+                        Min. order {formatNumber(product.minimum_order_kg)} kg
+                      </span>
                     </div>
                   )}
                   {product.has_odor && (
                     <div className="flex items-center gap-2 text-sm">
                       <AlertTriangle className="h-4 w-4 text-grade-warning" />
-                      <span className="text-grade-warning">Kain memiliki bau</span>
+                      <span className="text-grade-warning">
+                        Kain memiliki bau
+                      </span>
                     </div>
                   )}
                 </div>
@@ -425,8 +498,12 @@ export default function ListingDetailPage() {
                 <div className="flex items-start gap-2">
                   <Info className="mt-0.5 h-4 w-4 shrink-0 text-tenunara-terracotta" />
                   <div>
-                    <p className="text-xs font-semibold text-tenunara-teal">Analisis AI</p>
-                    <p className="mt-0.5 text-sm text-tenunara-charcoal">{product.ai_reasoning}</p>
+                    <p className="text-xs font-semibold text-tenunara-teal">
+                      Analisis AI
+                    </p>
+                    <p className="mt-0.5 text-sm text-tenunara-charcoal">
+                      {product.ai_reasoning}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -443,7 +520,8 @@ export default function ListingDetailPage() {
                     {product.seller.nama_penjual}
                   </p>
                   <p className="text-xs text-tenunara-teal">
-                    {product.seller.nama_toko}{product.seller.kota ? ` • ${product.seller.kota}` : ""}
+                    {product.seller.nama_toko}
+                    {product.seller.kota ? ` • ${product.seller.kota}` : ""}
                   </p>
                 </div>
               </div>
@@ -456,22 +534,14 @@ export default function ListingDetailPage() {
               <div className="space-y-3">
                 <div className="flex gap-3">
                   <Button
-                    onClick={() => router.push(`/dashboard/listings/${id}/edit`)}
+                    onClick={() =>
+                      router.push(`/dashboard/listings/${id}/edit`)
+                    }
                     className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-tenunara-terracotta bg-white px-5 py-3 text-sm font-semibold text-tenunara-terracotta transition-colors duration-200 hover:bg-tenunara-terracotta/5"
                   >
                     <Edit3 className="h-4 w-4" />
                     Edit
                   </Button>
-                  {!isSold && (
-                    <Button
-                      onClick={() => setDeleteOpen(true)}
-                      variant="outline"
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-destructive/30 px-5 py-3 text-sm font-medium text-destructive transition-colors duration-200 hover:bg-destructive/5"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      Hapus
-                    </Button>
-                  )}
                 </div>
               </div>
             )}
@@ -480,27 +550,39 @@ export default function ListingDetailPage() {
             {isCustomer && !isSold && (
               <div className="space-y-3 rounded-2xl border border-border p-4">
                 <div className="flex items-center gap-3">
-                  <label className="text-sm font-medium text-tenunara-charcoal" htmlFor="qty">
+                  <label
+                    className="text-sm font-medium text-tenunara-charcoal"
+                    htmlFor="qty"
+                  >
                     Jumlah (kg)
                   </label>
                   <Input
                     id="qty"
                     type="number"
                     min={1}
-                    max={product.total_weight_kg}
+                    max={availableStock}
                     value={quantity}
-                    onChange={(e) => setQuantity(Math.min(Number(e.target.value), product.total_weight_kg))}
+                    onChange={(e) =>
+                      setQuantity(
+                        Math.min(
+                          Number(e.target.value),
+                          availableStock,
+                        ),
+                      )
+                    }
                     className="w-24"
                   />
                   <span className="text-xs text-tenunara-teal">
-                    Maks {formatNumber(product.total_weight_kg)} kg
+                    Maks {formatNumber(availableStock)} kg
                   </span>
                 </div>
-                {product.minimum_order_kg && quantity < product.minimum_order_kg && (
-                  <p className="text-xs text-grade-warning">
-                    Minimum pembelian {formatNumber(product.minimum_order_kg)} kg
-                  </p>
-                )}
+                {product.minimum_order_kg &&
+                  quantity < product.minimum_order_kg && (
+                    <p className="text-xs text-grade-warning">
+                      Minimum pembelian {formatNumber(product.minimum_order_kg)}{" "}
+                      kg
+                    </p>
+                  )}
                 <Button
                   onClick={handleOrder}
                   disabled={creating}
@@ -511,7 +593,9 @@ export default function ListingDetailPage() {
                   ) : (
                     <ShoppingCart className="h-4 w-4" />
                   )}
-                  {creating ? "Memproses..." : `Pesan · ${formatCurrency(totalPrice)}`}
+                  {creating
+                    ? "Memproses..."
+                    : `Pesan · ${formatCurrency(totalPrice)}`}
                 </Button>
               </div>
             )}
@@ -519,25 +603,14 @@ export default function ListingDetailPage() {
             {/* Sold notice for customers */}
             {isCustomer && isSold && (
               <div className="rounded-2xl bg-tenunara-mint/50 p-4 text-center">
-                <p className="text-sm font-medium text-tenunara-teal">Produk ini sudah terjual</p>
+                <p className="text-sm font-medium text-tenunara-teal">
+                  Produk ini sudah terjual
+                </p>
               </div>
             )}
           </div>
         </div>
       </div>
-
-      {/* ── Delete confirmation ── */}
-      <ConfirmDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        title="Hapus Produk"
-        description="Apakah Anda yakin ingin menghapus produk ini? Tindakan ini tidak dapat dibatalkan."
-        confirmLabel="Hapus"
-        cancelLabel="Batal"
-        variant="destructive"
-        loading={deleting}
-        onConfirm={handleDelete}
-      />
     </div>
-  )
+  );
 }

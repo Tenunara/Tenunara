@@ -495,6 +495,8 @@ export interface CreateOrderRequest {
     quantity_kg: number
   }[]
   notes?: string
+  shipping_option?: string
+  payment_method?: string
 }
 
 export interface CreateDisputeRequest {

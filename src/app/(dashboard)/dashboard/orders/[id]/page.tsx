@@ -15,10 +15,10 @@ import {
   ShieldCheck,
   Scale,
   ChevronDown,
+  Info,
 } from "lucide-react"
 import { ErrorState, ConfirmDialog } from "@/components/shared"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { cn, formatCurrency, formatDate, formatRelativeTime, formatNumber } from "@/lib/utils"
@@ -30,6 +30,8 @@ import {
   RESOLUTION_TYPE_LABEL,
   ORDER_STATUS_FLOW,
   GRADE_BG,
+  SHIPPING_OPTIONS,
+  PAYMENT_METHODS,
 } from "@/lib/constants"
 import {
   fetchOrderById,
@@ -47,7 +49,6 @@ import type {
   OrderStatusHistory,
   OrderDisputeRow,
   OrderDisputeReason,
-  ResolutionType,
 } from "@/lib/types"
 
 // ─── Helpers ─────────────────────────────────────────────────
@@ -55,6 +56,18 @@ import type {
 function getStatusIndex(status: string): number {
   const idx = ORDER_STATUS_FLOW.indexOf(status)
   return idx >= 0 ? idx : -1
+}
+
+function parseOrderNotes(notes: string | null): { meta: string | null; cleanNotes: string | null } {
+  if (!notes) return { meta: null, cleanNotes: null }
+  const metaMatch = notes.match(/^===(.*?)===\n?/)
+  if (metaMatch) {
+    return {
+      meta: metaMatch[1],
+      cleanNotes: notes.slice(metaMatch[0].length).trim() || null,
+    }
+  }
+  return { meta: null, cleanNotes: notes }
 }
 
 // ─── Skeleton ────────────────────────────────────────────────
@@ -388,10 +401,9 @@ export default function OrderDetailPage() {
   const [cancelOpen, setCancelOpen] = useState(false)
   const [cancelReason, setCancelReason] = useState("")
 
-  // Shipment form
-  const [showShipmentForm, setShowShipmentForm] = useState(false)
-  const [courierName, setCourierName] = useState("")
-  const [trackingNumber, setTrackingNumber] = useState("")
+  // Shipping / payment options (selected during pay)
+  const [shippingOption, setShippingOption] = useState("reguler")
+  const [paymentMethod, setPaymentMethod] = useState("transfer_bank")
 
   // Dispute form
   const [showDisputeForm, setShowDisputeForm] = useState(false)
@@ -401,7 +413,6 @@ export default function OrderDetailPage() {
   // Resolve dispute form
   const [showResolveForm, setShowResolveForm] = useState(false)
   const [resolutionText, setResolutionText] = useState("")
-  const [resolutionType, setResolutionType] = useState<ResolutionType | "">("")
   const [resolutionAction, setResolutionAction] = useState<"complete" | "cancel" | "">("")
 
   const currentUserId = typeof window !== "undefined" ? localStorage.getItem("sb-user-id") || "" : ""
@@ -436,14 +447,14 @@ export default function OrderDetailPage() {
   const handlePay = useCallback(async () => {
     setActionLoading("pay")
     try {
-      await payOrder(id)
+      await payOrder(id, shippingOption, paymentMethod)
       refreshOrder()
     } catch (err: any) {
       alert(err.message)
     } finally {
       setActionLoading(null)
     }
-  }, [id, refreshOrder])
+  }, [id, shippingOption, paymentMethod, refreshOrder])
 
   const handleConfirmReceipt = useCallback(async () => {
     setActionLoading("confirm-receipt")
@@ -458,21 +469,16 @@ export default function OrderDetailPage() {
   }, [id, refreshOrder])
 
   const handleConfirmShipment = useCallback(async () => {
-    if (!courierName.trim()) return
     setActionLoading("confirm-shipment")
     try {
-      await confirmShipment(id, {
-        courier_name: courierName,
-        tracking_number: trackingNumber || undefined,
-      })
-      setShowShipmentForm(false)
+      await confirmShipment(id)
       refreshOrder()
     } catch (err: any) {
       alert(err.message)
     } finally {
       setActionLoading(null)
     }
-  }, [id, courierName, trackingNumber, refreshOrder])
+  }, [id, refreshOrder])
 
   const handleCancel = useCallback(async () => {
     setActionLoading("cancel")
@@ -506,17 +512,16 @@ export default function OrderDetailPage() {
   }, [id, disputeReason, disputeDesc, refreshOrder])
 
   const handleResolveDispute = useCallback(async () => {
-    if (!resolutionText || !resolutionType || !resolutionAction) return
+    if (!resolutionText || !resolutionAction) return
     setActionLoading("resolve")
     try {
       await resolveDispute(id, {
         resolution: resolutionText,
-        resolution_type: resolutionType as ResolutionType,
+        resolution_type: resolutionAction === "cancel" ? "refund" : "other",
         action: resolutionAction as "complete" | "cancel",
       })
       setShowResolveForm(false)
       setResolutionText("")
-      setResolutionType("")
       setResolutionAction("")
       refreshOrder()
     } catch (err: any) {
@@ -524,7 +529,7 @@ export default function OrderDetailPage() {
     } finally {
       setActionLoading(null)
     }
-  }, [id, resolutionText, resolutionType, resolutionAction, refreshOrder])
+  }, [id, resolutionText, resolutionAction, refreshOrder])
 
   // ── Render ──
 
@@ -564,6 +569,8 @@ export default function OrderDetailPage() {
   const canConfirmShipment = isUmkm && status === "awaiting_shipment"
   const canConfirmReceipt = !isUmkm && status === "in_verification"
   const canDispute = !isUmkm && status === "in_verification"
+  const { meta: orderMeta, cleanNotes } = parseOrderNotes(order.notes)
+  const selectedShippingCost = SHIPPING_OPTIONS.find(o => o.value === shippingOption)?.cost || 15000
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -609,30 +616,87 @@ export default function OrderDetailPage() {
         <OrderTimeline status={status} />
 
         {/* Action buttons */}
-        {/* Pay */}
+        {/* Pay — choose shipping + payment, then pay */}
         {canPay && (
           <div className="rounded-2xl bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-grade-warning/10 text-grade-warning">
-                <CreditCard className="h-5 w-5" />
+            <h3 className="mb-1 text-sm font-semibold text-tenunara-charcoal">Selesaikan Pembayaran</h3>
+            <p className="mb-4 text-xs text-tenunara-teal">Pilih opsi pengiriman dan pembayaran sebelum melanjutkan</p>
+
+            <div className="space-y-4">
+              {/* Shipping option */}
+              <div>
+                <Label htmlFor="shipping">Opsi Pengiriman</Label>
+                <select
+                  id="shipping"
+                  value={shippingOption}
+                  onChange={(e) => setShippingOption(e.target.value)}
+                  className="mt-1 block w-full rounded-xl border border-border bg-white px-3 py-2.5 text-sm text-tenunara-charcoal focus:border-tenunara-terracotta focus:outline-none"
+                >
+                  {SHIPPING_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label} — {formatCurrency(opt.cost)}
+                    </option>
+                  ))}
+                </select>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-tenunara-charcoal">Menunggu Pembayaran</p>
-                <p className="text-xs text-tenunara-teal">Melakukan simulasi pembayaran untuk melanjutkan pesanan</p>
+
+              {/* Payment method */}
+              <div>
+                <Label htmlFor="payment">Metode Pembayaran</Label>
+                <select
+                  id="payment"
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  className="mt-1 block w-full rounded-xl border border-border bg-white px-3 py-2.5 text-sm text-tenunara-charcoal focus:border-tenunara-terracotta focus:outline-none"
+                >
+                  {PAYMENT_METHODS.map((method) => (
+                    <option key={method.value} value={method.value}>
+                      {method.label}
+                    </option>
+                  ))}
+                </select>
               </div>
+
+              {/* Price preview */}
+              <div className="rounded-xl bg-tenunara-mint/30 p-3">
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between text-tenunara-teal">
+                    <span>Subtotal</span>
+                    <span className="text-tenunara-charcoal">{formatCurrency(order.subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-tenunara-teal">
+                    <span>Ongkos Kirim</span>
+                    <span className="text-tenunara-charcoal">{formatCurrency(selectedShippingCost)}</span>
+                  </div>
+                  <div className="flex justify-between text-tenunara-teal">
+                    <span>Biaya Aplikasi (2.5%)</span>
+                    <span className="text-tenunara-charcoal">{formatCurrency(order.app_fee)}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-border pt-1 font-bold text-tenunara-charcoal">
+                    <span>Total</span>
+                    <span className="text-tenunara-terracotta">
+                      {formatCurrency(order.subtotal + selectedShippingCost + order.app_fee)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pay button */}
               <Button
                 onClick={handlePay}
                 disabled={actionLoading === "pay"}
-                className="shrink-0 rounded-xl bg-tenunara-terracotta px-5 py-2 text-sm font-semibold text-white hover:bg-tenunara-terracotta/90 disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-tenunara-terracotta px-5 py-3 text-sm font-semibold text-white hover:bg-tenunara-terracotta/90 disabled:opacity-50"
               >
-                {actionLoading === "pay" ? "Memproses..." : `Bayar ${formatCurrency(order.grand_total)}`}
+                {actionLoading === "pay"
+                  ? "Memproses..."
+                  : `Bayar ${formatCurrency(order.subtotal + selectedShippingCost + order.app_fee)}`}
               </Button>
             </div>
           </div>
         )}
 
-        {/* Confirm Shipment (UMKM) */}
-        {canConfirmShipment && !showShipmentForm && (
+        {/* Confirm Shipment (UMKM) — one-click status update */}
+        {canConfirmShipment && (
           <div className="rounded-2xl bg-white p-5 shadow-sm">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
@@ -643,55 +707,12 @@ export default function OrderDetailPage() {
                 <p className="text-xs text-tenunara-teal">Konfirmasi bahwa barang sudah dikirim ke pengrajin</p>
               </div>
               <Button
-                onClick={() => setShowShipmentForm(true)}
-                className="shrink-0 rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                onClick={handleConfirmShipment}
+                disabled={actionLoading === "confirm-shipment"}
+                className="shrink-0 rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
               >
-                Konfirmasi Kirim
+                {actionLoading === "confirm-shipment" ? "Memproses..." : "Barang dalam Perjalanan"}
               </Button>
-            </div>
-          </div>
-        )}
-
-        {showShipmentForm && (
-          <div className="rounded-2xl bg-white p-5 shadow-sm">
-            <h3 className="mb-4 text-sm font-semibold text-tenunara-charcoal">Form Pengiriman</h3>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="courier">Nama Kurir</Label>
-                <Input
-                  id="courier"
-                  placeholder="JNE, J&T, SiCepat, dll."
-                  value={courierName}
-                  onChange={(e) => setCourierName(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label htmlFor="tracking">Nomor Resi (opsional)</Label>
-                <Input
-                  id="tracking"
-                  placeholder="Nomor resi pengiriman"
-                  value={trackingNumber}
-                  onChange={(e) => setTrackingNumber(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-              <div className="flex gap-3">
-                <Button
-                  onClick={handleConfirmShipment}
-                  disabled={!courierName.trim() || actionLoading === "confirm-shipment"}
-                  className="flex-1 rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {actionLoading === "confirm-shipment" ? "Memproses..." : "Konfirmasi"}
-                </Button>
-                <Button
-                  onClick={() => setShowShipmentForm(false)}
-                  variant="outline"
-                  className="rounded-xl px-5 py-2 text-sm"
-                >
-                  Batal
-                </Button>
-              </div>
             </div>
           </div>
         )}
@@ -842,21 +863,6 @@ export default function OrderDetailPage() {
                 </select>
               </div>
               <div>
-                <Label htmlFor="resolution-type">Tipe Resolusi</Label>
-                <select
-                  id="resolution-type"
-                  value={resolutionType}
-                  onChange={(e) => setResolutionType(e.target.value as ResolutionType)}
-                  className="mt-1 block w-full rounded-xl border border-border bg-white px-3 py-2.5 text-sm text-tenunara-charcoal focus:border-tenunara-terracotta focus:outline-none"
-                >
-                  <option value="">Pilih tipe...</option>
-                  <option value="refund">Refund</option>
-                  <option value="price_adjustment">Penyesuaian Harga</option>
-                  <option value="return">Retur</option>
-                  <option value="other">Lainnya</option>
-                </select>
-              </div>
-              <div>
                 <Label htmlFor="resolution-desc">Penjelasan Resolusi</Label>
                 <Textarea
                   id="resolution-desc"
@@ -870,7 +876,7 @@ export default function OrderDetailPage() {
               <div className="flex gap-3">
                 <Button
                   onClick={handleResolveDispute}
-                  disabled={!resolutionText || !resolutionType || !resolutionAction || actionLoading === "resolve"}
+                  disabled={!resolutionText || !resolutionAction || actionLoading === "resolve"}
                   className="flex-1 rounded-xl bg-destructive px-5 py-2 text-sm font-semibold text-white hover:bg-destructive/90 disabled:opacity-50"
                 >
                   {actionLoading === "resolve" ? "Memproses..." : "Selesaikan Komplain"}
@@ -941,7 +947,23 @@ export default function OrderDetailPage() {
         {order.notes && (
           <div className="rounded-2xl bg-white p-5 shadow-sm">
             <h3 className="mb-1 text-xs font-semibold uppercase tracking-wider text-tenunara-teal">Catatan</h3>
-            <p className="text-sm text-tenunara-charcoal">{order.notes}</p>
+            {/* Shipping / payment meta info */}
+            {orderMeta && (
+              <div className="mb-3 flex items-start gap-2 rounded-xl bg-tenunara-mint/30 p-3">
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-tenunara-terracotta" />
+                <div className="text-sm text-tenunara-charcoal">
+                  {orderMeta.split(" | ").map((line, i) => (
+                    <p key={i}>{line}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+            {cleanNotes && (
+              <p className="text-sm leading-relaxed text-tenunara-charcoal">{cleanNotes}</p>
+            )}
+            {!cleanNotes && !orderMeta && (
+              <p className="text-sm leading-relaxed text-tenunara-charcoal">{order.notes}</p>
+            )}
           </div>
         )}
 

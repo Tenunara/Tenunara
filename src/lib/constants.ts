@@ -184,3 +184,25 @@ export const ORDER_STATUS_FLOW: string[] = [
   "in_verification",
   "completed",
 ]
+
+// ─── Shipping / Payment Options ───────────────────────────────
+
+export const SHIPPING_OPTIONS: { value: string; label: string; cost: number }[] = [
+  { value: "reguler", label: "Reguler (3-5 hari)", cost: 10000 },
+  { value: "express", label: "Express (1-2 hari)", cost: 20000 },
+  { value: "same_day", label: "Same Day", cost: 35000 },
+]
+
+export const SHIPPING_OPTION_LABEL: Record<string, string> = Object.fromEntries(
+  SHIPPING_OPTIONS.map((o) => [o.value, o.label]),
+)
+
+export const PAYMENT_METHODS: { value: string; label: string }[] = [
+  { value: "transfer_bank", label: "Transfer Bank" },
+  { value: "virtual_account", label: "Virtual Account" },
+  { value: "ewallet", label: "E-Wallet" },
+]
+
+export const PAYMENT_METHOD_LABEL: Record<string, string> = Object.fromEntries(
+  PAYMENT_METHODS.map((o) => [o.value, o.label]),
+)
