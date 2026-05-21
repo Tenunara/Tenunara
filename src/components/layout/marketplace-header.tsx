@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Bell, ShoppingCart, Menu, Search, LogOut, LayoutDashboard } from "lucide-react"
+import { Bell, ShoppingCart, Menu, Search, LogOut, LayoutDashboard, Sparkles } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -107,6 +107,26 @@ export function MarketplaceHeader({ user, onLogout }: MarketplaceHeaderProps) {
             {LOGO}
           </span>
         </Link>
+
+        {/* Nav links — pengrajin */}
+        {user && (
+          <nav className="hidden items-center gap-1 lg:flex">
+            <Link
+              href="/dashboard/browse"
+              className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-tenunara-teal transition-colors hover:bg-tenunara-mint/50 hover:text-tenunara-charcoal"
+            >
+              <Sparkles className="h-4 w-4" />
+              Pencarian Cerdas
+            </Link>
+            <Link
+              href="/dashboard/orders"
+              className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-tenunara-teal transition-colors hover:bg-tenunara-mint/50 hover:text-tenunara-charcoal"
+            >
+              <ShoppingCart className="h-4 w-4" />
+              Pesanan Saya
+            </Link>
+          </nav>
+        )}
 
         {/* Search bar */}
         <form onSubmit={handleSearch} className="flex max-w-xl flex-1 items-center">
