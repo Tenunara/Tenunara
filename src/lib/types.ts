@@ -344,6 +344,181 @@ export interface SearchResultItem {
 }
 
 // ============================================================
+// ORDER TYPES
+// ============================================================
+export type OrderStatus =
+  | "pending_payment"
+  | "awaiting_shipment"
+  | "in_verification"
+  | "completed"
+  | "dispute"
+  | "cancelled"
+
+export type OrderDisputeReason =
+  | "quality_not_match"
+  | "grade_different"
+  | "wrong_material"
+  | "damaged"
+  | "quantity_insufficient"
+  | "other"
+
+export type OrderDisputeStatus = "open" | "resolved" | "rejected"
+
+export type ResolutionType = "refund" | "price_adjustment" | "return" | "other"
+
+export type EscrowStatus = "held" | "released" | "refunded"
+
+export type ReservationStatus = "active" | "released" | "consumed"
+
+export interface OrderRow {
+  id: string
+  order_number: string
+  pengrajin_id: string
+  umkm_id: string
+  status: OrderStatus
+  subtotal: number
+  shipping_cost: number
+  app_fee: number
+  grand_total: number
+  notes: string | null
+  courier_name: string | null
+  tracking_number: string | null
+  payment_simulated_at: string | null
+  confirmed_by_seller_at: string | null
+  confirmed_by_buyer_at: string | null
+  escrow_release_at: string | null
+  completed_at: string | null
+  cancelled_at: string | null
+  cancellation_reason: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface OrderItem {
+  id: number
+  order_id: string
+  product_id: string
+  quantity_kg: number
+  price_per_kg: number
+  subtotal: number
+  created_at: string
+}
+
+export interface OrderStatusHistory {
+  id: number
+  order_id: string
+  from_status: string | null
+  to_status: string
+  changed_by: string | null
+  notes: string | null
+  created_at: string
+}
+
+export interface StockReservation {
+  id: number
+  product_id: string
+  order_id: string
+  reserved_kg: number
+  status: ReservationStatus
+  expires_at: string
+  created_at: string
+}
+
+export interface EscrowTransaction {
+  id: number
+  order_id: string
+  amount: number
+  status: EscrowStatus
+  held_at: string
+  released_at: string | null
+  refunded_at: string | null
+}
+
+export interface OrderDisputeRow {
+  id: string
+  order_id: string
+  raised_by: string
+  dispute_reason: OrderDisputeReason
+  description: string
+  image_urls: string[]
+  status: OrderDisputeStatus
+  resolution: string | null
+  resolution_type: ResolutionType | null
+  resolved_by: string | null
+  resolved_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface WasteDiversionLog {
+  id: number
+  order_id: string
+  umkm_id: string
+  total_weight_kg: number
+  logged_at: string
+}
+
+// ============================================================
+// ORDER COMPOSITE TYPES
+// ============================================================
+export interface OrderWithDetails extends OrderRow {
+  items: OrderItemWithProduct[]
+  status_history: OrderStatusHistory[]
+  escrow: EscrowTransaction | null
+  dispute: OrderDisputeRow | null
+  waste_log: WasteDiversionLog | null
+  pengrajin: Pick<PengrajinRow, "nama" | "kota" | "kabupaten"> | null
+  umkm: Pick<UmkmRow, "nama_penjual" | "nama_toko" | "kota" | "kabupaten"> | null
+}
+
+export interface OrderItemWithProduct extends OrderItem {
+  product: Pick<ProductRow, "id" | "images_url" | "final_grade" | "fabric_type_id"> & {
+    fabric_name?: string
+  }
+}
+
+export interface OrderListItem extends OrderRow {
+  items_count: number
+  total_weight_kg: number
+  first_product_image: string | null
+  pengrajin_name: string | null
+  umkm_name: string | null
+  dispute_id: string | null
+}
+
+// ============================================================
+// ORDER REQUEST TYPES
+// ============================================================
+export interface CreateOrderRequest {
+  items: {
+    product_id: string
+    quantity_kg: number
+  }[]
+  notes?: string
+}
+
+export interface CreateDisputeRequest {
+  dispute_reason: OrderDisputeReason
+  description: string
+  images_base64?: string[]
+}
+
+export interface ResolveDisputeRequest {
+  resolution: string
+  resolution_type: ResolutionType
+  action: "complete" | "cancel"
+}
+
+export interface SimulatePaymentRequest {
+  /* no fields — payment is a simulated action */
+}
+
+export interface ConfirmShipmentRequest {
+  courier_name?: string
+  tracking_number?: string
+}
+
+// ============================================================
 // COMPOSITE TYPES (joins used in UI)
 // ============================================================
 export interface ListingWithSeller extends Listing {
