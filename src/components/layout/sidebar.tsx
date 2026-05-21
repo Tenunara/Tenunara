@@ -48,7 +48,6 @@ const sellerItems: SidebarItem[] = [
     href: "/dashboard/orders",
     icon: <ShoppingCart className="h-5 w-5" />,
   },
-  { label: "ESG", href: "/dashboard/esg", icon: <Leaf className="h-5 w-5" /> },
 ];
 
 const buyerItems: SidebarItem[] = [
@@ -67,7 +66,6 @@ const buyerItems: SidebarItem[] = [
     href: "/dashboard/orders",
     icon: <ShoppingCart className="h-5 w-5" />,
   },
-  { label: "ESG", href: "/dashboard/esg", icon: <Leaf className="h-5 w-5" /> },
 ];
 
 export function Sidebar({ user, onLogout, mobile = false }: SidebarProps) {

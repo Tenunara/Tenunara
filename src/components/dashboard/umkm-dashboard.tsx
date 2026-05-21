@@ -17,12 +17,12 @@ function DashboardSkeleton() {
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="h-32 animate-pulse rounded-2xl bg-white shadow-sm ring-1 ring-foreground/5"
+            className="h-32 animate-pulse rounded-2xl border border-[#E5DDD5] bg-white shadow-sm"
           />
         ))}
       </div>
-      <div className="h-80 animate-pulse rounded-2xl bg-white shadow-sm ring-1 ring-foreground/5" />
-      <div className="h-64 animate-pulse rounded-2xl bg-white shadow-sm ring-1 ring-foreground/5" />
+      <div className="h-80 animate-pulse rounded-2xl border border-[#E5DDD5] bg-white shadow-sm" />
+      <div className="h-64 animate-pulse rounded-2xl border border-[#E5DDD5] bg-white shadow-sm" />
     </div>
   );
 }
@@ -146,7 +146,7 @@ export function UmkmDashboard() {
       </div>
 
       {/* Governance footer */}
-      <p className="text-right text-[10px] italic text-tenunara-teal/40">
+      <p className="text-right text-[10px] italic text-[#4F626366]">
         {data.governance.auditor_log}
       </p>
     </div>

@@ -65,7 +65,6 @@ const sellerLinks: NavLink[] = [
     href: "/dashboard/orders",
     icon: <ShoppingCart className="h-4 w-4" />,
   },
-  { label: "ESG", href: "/dashboard/esg", icon: <Leaf className="h-4 w-4" /> },
 ];
 
 const buyerLinks: NavLink[] = [
@@ -84,7 +83,6 @@ const buyerLinks: NavLink[] = [
     href: "/dashboard/orders",
     icon: <ShoppingCart className="h-4 w-4" />,
   },
-  { label: "ESG", href: "/dashboard/esg", icon: <Leaf className="h-4 w-4" /> },
 ];
 
 export function Navbar({ user, onLogout }: NavbarProps) {
