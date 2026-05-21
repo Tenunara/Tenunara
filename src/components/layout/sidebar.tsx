@@ -50,7 +50,8 @@ const buyerItems: SidebarItem[] = [
 
 export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname()
-  const items = user.role === "seller" ? sellerItems : buyerItems
+  const isSeller = user.role === "seller" || user.role === "umkm"
+  const items = isSeller ? sellerItems : buyerItems
 
   const isActive = (href: string) => {
     if (href === "/dashboard") return pathname === "/dashboard"
@@ -111,7 +112,7 @@ export function Sidebar({ user }: SidebarProps) {
               {user.name}
             </p>
             <p className="truncate text-xs text-tenunara-teal">
-              {user.role === "seller" ? "UMKM" : "Pengrajin"}
+              {user.role === "seller" || user.role === "umkm" ? "UMKM" : "Pengrajin"}
             </p>
           </div>
         </div>
