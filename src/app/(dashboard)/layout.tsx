@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/layout/navbar";
 import { MarketplaceHeader } from "@/components/layout/marketplace-header";
 import { LoadingSpinner } from "@/components/shared";
+import { CartProvider } from "@/contexts/cart-context";
 import { toast } from "sonner";
 import type { PengrajinRow, UmkmRow, UserRole } from "@/lib/types";
 
@@ -85,13 +86,15 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-tenunara-canvas">
-      {userProfile.role === "pengrajin" ? (
-        <MarketplaceHeader user={userProfile} onLogout={handleLogout} />
-      ) : (
-        <Navbar user={userProfile} onLogout={handleLogout} />
-      )}
-      <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">{children}</main>
-    </div>
+    <CartProvider>
+      <div className="flex min-h-screen flex-col bg-tenunara-canvas">
+        {userProfile.role === "pengrajin" ? (
+          <MarketplaceHeader user={userProfile} onLogout={handleLogout} />
+        ) : (
+          <Navbar user={userProfile} onLogout={handleLogout} />
+        )}
+        <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">{children}</main>
+      </div>
+    </CartProvider>
   )
 }
