@@ -103,6 +103,7 @@ export function PengrajinDashboard() {
     price: Math.round(p.price_per_kg * 0.75),
     originalPrice: p.price_per_kg,
     discount: [25, 30, 20, 15, 40][i % 5],
+    imageUrl: p.images_url || undefined,
   }))
 
   const gradeAProducts = products.filter((p) => p.final_grade === "A")

@@ -108,11 +108,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const checkout = useCallback(async () => {
     try {
       setError(null);
-      await checkoutCart();
+      const res = await checkoutCart();
       setCartData((prev) =>
         prev ? { ...prev, groups: [], items_count: 0, grand_total: 0 } : prev,
       );
-      router.push("/dashboard/orders");
+
+      // If checkout created orders, redirect to payment page for the first order
+      if (res && Array.isArray(res.orders) && res.orders.length > 0) {
+        const firstOrderId = res.orders[0].order_id;
+        router.push(`/dashboard/orders/${firstOrderId}`);
+      } else {
+        router.push("/dashboard/orders");
+      }
     } catch (err: any) {
       setError(err.message);
       throw err;
