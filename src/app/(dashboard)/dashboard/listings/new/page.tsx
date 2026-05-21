@@ -1,115 +1,138 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
-import { ArrowLeft, Check, Camera, FileText, Loader2, Info } from "lucide-react"
-import { ImageUploader } from "@/components/listing/image-uploader"
-import { AIResultDisplay } from "@/components/listing/ai-result-display"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
+import React, { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  Check,
+  Camera,
+  FileText,
+  Loader2,
+  Info,
+} from "lucide-react";
+import { ImageUploader } from "@/components/listing/image-uploader";
+import { AIResultDisplay } from "@/components/listing/ai-result-display";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { cn } from "@/lib/utils"
-import { fetchFabricTypes, createProduct, analyzeProductImages } from "@/lib/api"
-import { PRODUCTION_SOURCE_LABEL, HYGIENE_STATUS_LABEL, AI_SIZE_RANGE_LABEL } from "@/lib/constants"
-import type { FabricType, AIAnalysisResult, CreateProductRequest } from "@/lib/types"
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import {
+  fetchFabricTypes,
+  createProduct,
+  analyzeProductImages,
+} from "@/lib/api";
+import {
+  PRODUCTION_SOURCE_LABEL,
+  HYGIENE_STATUS_LABEL,
+  AI_SIZE_RANGE_LABEL,
+} from "@/lib/constants";
+import type {
+  FabricType,
+  AIAnalysisResult,
+  CreateProductRequest,
+} from "@/lib/types";
 
-type Step = "upload" | "review" | "form"
+type Step = "upload" | "review" | "form";
 
 const STEPS: { key: Step; label: string; icon: React.ReactNode }[] = [
   { key: "upload", label: "Upload Foto", icon: <Camera className="h-4 w-4" /> },
   { key: "review", label: "Review AI", icon: <FileText className="h-4 w-4" /> },
   { key: "form", label: "Lengkapi Data", icon: <Check className="h-4 w-4" /> },
-]
+];
 
 export default function NewListingPage() {
-  const router = useRouter()
-  const [step, setStep] = useState<Step>("upload")
-  const [imagesBase64, setImagesBase64] = useState<string[]>([])
-  const [aiResult, setAiResult] = useState<AIAnalysisResult | null>(null)
-  const [analysisLoading, setAnalysisLoading] = useState(false)
-  const [analysisError, setAnalysisError] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [fabricTypes, setFabricTypes] = useState<FabricType[]>([])
+  const router = useRouter();
+  const [step, setStep] = useState<Step>("upload");
+  const [imagesBase64, setImagesBase64] = useState<string[]>([]);
+  const [aiResult, setAiResult] = useState<AIAnalysisResult | null>(null);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fabricTypes, setFabricTypes] = useState<FabricType[]>([]);
 
   // Form fields
-  const [fabricTypeId, setFabricTypeId] = useState("")
-  const [fiberComposition, setFiberComposition] = useState("")
-  const [productionSource, setProductionSource] = useState("")
-  const [hygieneStatus, setHygieneStatus] = useState("")
-  const [hasOdor, setHasOdor] = useState(false)
-  const [totalWeightKg, setTotalWeightKg] = useState("")
-  const [estimatedPieces, setEstimatedPieces] = useState("")
-  const [pricePerKg, setPricePerKg] = useState("")
-  const [isNegotiable, setIsNegotiable] = useState(false)
-  const [minimumOrderKg, setMinimumOrderKg] = useState("")
-  const [notes, setNotes] = useState("")
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [fabricTypeId, setFabricTypeId] = useState("");
+  const [fiberComposition, setFiberComposition] = useState("");
+  const [productionSource, setProductionSource] = useState("");
+  const [hygieneStatus, setHygieneStatus] = useState("");
+  const [hasOdor, setHasOdor] = useState(false);
+  const [totalWeightKg, setTotalWeightKg] = useState("");
+  const [estimatedPieces, setEstimatedPieces] = useState("");
+  const [pricePerKg, setPricePerKg] = useState("");
+  const [isNegotiable, setIsNegotiable] = useState(false);
+  const [minimumOrderKg, setMinimumOrderKg] = useState("");
+  const [notes, setNotes] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const stepIndex = STEPS.findIndex((s) => s.key === step)
+  const stepIndex = STEPS.findIndex((s) => s.key === step);
 
   useEffect(() => {
-    fetchFabricTypes().then(setFabricTypes).catch(() => {})
-  }, [])
+    fetchFabricTypes()
+      .then(setFabricTypes)
+      .catch(() => {});
+  }, []);
 
   const handleImagesReady = useCallback(async (base64Array: string[]) => {
-    setImagesBase64(base64Array)
-    setAnalysisLoading(true)
-    setAnalysisError(null)
+    setImagesBase64(base64Array);
+    setAnalysisLoading(true);
+    setAnalysisError(null);
 
     try {
-      const result = await analyzeProductImages(base64Array.length)
-      setAiResult(result)
-      setAnalysisLoading(false)
-      setStep("review")
+      const result = await analyzeProductImages(base64Array.length);
+      setAiResult(result);
+      setAnalysisLoading(false);
+      setStep("review");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Gagal menganalisis foto"
-      setAnalysisError(msg)
-      setAnalysisLoading(false)
-      setStep("form")
+      const msg =
+        err instanceof Error ? err.message : "Gagal menganalisis foto";
+      setAnalysisError(msg);
+      setAnalysisLoading(false);
+      setStep("form");
     }
-  }, [])
+  }, []);
 
   const handleConfirmAI = () => {
-    setStep("form")
-  }
+    setStep("form");
+  };
 
   const handleRetake = () => {
-    setStep("upload")
-    setAiResult(null)
-    setImagesBase64([])
-    setAnalysisError(null)
-  }
+    setStep("upload");
+    setAiResult(null);
+    setImagesBase64([]);
+    setAnalysisError(null);
+  };
 
   const validate = () => {
-    const errs: Record<string, string> = {}
-    if (!fabricTypeId) errs.fabricTypeId = "Pilih jenis kain"
-    if (!productionSource) errs.productionSource = "Pilih sumber produksi"
-    if (!hygieneStatus) errs.hygieneStatus = "Pilih status kebersihan"
+    const errs: Record<string, string> = {};
+    if (!fabricTypeId) errs.fabricTypeId = "Pilih jenis kain";
+    if (!productionSource) errs.productionSource = "Pilih sumber produksi";
+    if (!hygieneStatus) errs.hygieneStatus = "Pilih status kebersihan";
     if (!totalWeightKg || Number(totalWeightKg) < 0.5)
-      errs.totalWeightKg = "Berat minimal 0.5 kg"
+      errs.totalWeightKg = "Berat minimal 0.5 kg";
     if (!pricePerKg || Number(pricePerKg) <= 0)
-      errs.pricePerKg = "Harga per kg wajib diisi"
-    if (notes.length > 300) errs.notes = "Catatan maksimal 300 karakter"
-    setErrors(errs)
-    return Object.keys(errs).length === 0
-  }
+      errs.pricePerKg = "Harga per kg wajib diisi";
+    if (notes.length > 300) errs.notes = "Catatan maksimal 300 karakter";
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
 
   const handleSubmit = async () => {
-    if (!validate()) return
+    if (!validate()) return;
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
       const payload: CreateProductRequest & { ai_result?: AIAnalysisResult } = {
         fabric_type_id: Number(fabricTypeId),
-        production_source: productionSource as CreateProductRequest["production_source"],
+        production_source:
+          productionSource as CreateProductRequest["production_source"],
         hygiene_status: hygieneStatus as CreateProductRequest["hygiene_status"],
         has_odor: hasOdor,
         total_weight_kg: Number(totalWeightKg),
@@ -122,25 +145,27 @@ export default function NewListingPage() {
         ...(minimumOrderKg && { minimum_order_kg: Number(minimumOrderKg) }),
         ...(notes && { notes }),
         ...(aiResult && { ai_result: aiResult }),
-      }
+      };
 
-      await createProduct(payload)
-      router.push("/dashboard/listings")
+      await createProduct(payload);
+      router.push("/dashboard/listings");
     } catch (err) {
-      setErrors({ submit: err instanceof Error ? err.message : "Gagal membuat produk" })
+      setErrors({
+        submit: err instanceof Error ? err.message : "Gagal membuat produk",
+      });
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   const handleBack = () => {
-    if (step === "upload") router.push("/dashboard/listings")
-    else if (step === "review") setStep("upload")
-    else setStep("review")
-  }
+    if (step === "upload") router.push("/dashboard/listings");
+    else if (step === "review") setStep("upload");
+    else setStep("review");
+  };
 
   const selectClass = (hasError: boolean) =>
-    cn(hasError && "border-destructive ring-1 ring-destructive")
+    cn(hasError && "border-destructive ring-1 ring-destructive");
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -153,7 +178,9 @@ export default function NewListingPage() {
         Kembali
       </button>
 
-      <h1 className="text-2xl font-bold text-tenunara-charcoal">Buat Listing Baru</h1>
+      <h1 className="text-2xl font-bold text-tenunara-charcoal">
+        Buat Listing Baru
+      </h1>
       <p className="mt-1 text-sm text-tenunara-teal">
         Upload foto kain untuk analisis AI otomatis
       </p>
@@ -175,7 +202,10 @@ export default function NewListingPage() {
             </div>
             {i < STEPS.length - 1 && (
               <div
-                className={cn("h-px w-8", i < stepIndex ? "bg-tenunara-terracotta" : "bg-border")}
+                className={cn(
+                  "h-px w-8",
+                  i < stepIndex ? "bg-tenunara-terracotta" : "bg-border",
+                )}
               />
             )}
           </div>
@@ -186,10 +216,7 @@ export default function NewListingPage() {
         {/* STEP 1: Upload */}
         {step === "upload" && (
           <div className="space-y-6">
-            <ImageUploader
-              onImagesReady={handleImagesReady}
-              maxImages={5}
-            />
+            <ImageUploader onImagesReady={handleImagesReady} maxImages={5} />
 
             {analysisError && (
               <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-4">
@@ -236,26 +263,48 @@ export default function NewListingPage() {
                 <Label htmlFor="fabricType">
                   Jenis Kain <span className="text-destructive">*</span>
                 </Label>
-                <Select value={fabricTypeId} onValueChange={(v) => v && setFabricTypeId(v)}>
-                  <SelectTrigger className={selectClass(!!errors.fabricTypeId)}>
-                    <SelectValue placeholder="Pilih jenis kain" />
+                <Select
+                  value={fabricTypeId}
+                  onValueChange={(v) => v && setFabricTypeId(v)}
+                >
+                  <SelectTrigger
+                    className={cn(
+                      "w-full bg-white",
+                      selectClass(!!errors.fabricTypeId),
+                    )}
+                  >
+                    <SelectValue placeholder="Pilih jenis kain">
+                      {fabricTypeId
+                        ? fabricTypes.find(
+                            (ft) => String(ft.id) === fabricTypeId,
+                          )?.name
+                        : "Pilih jenis kain"}
+                    </SelectValue>
                   </SelectTrigger>
+
                   <SelectContent>
                     {fabricTypes.map((ft) => (
                       <SelectItem key={ft.id} value={String(ft.id)}>
-                        {ft.name} {ft.common_uses ? `– ${ft.common_uses}` : ""}
+                        <span className="block truncate pr-4 text-left">
+                          {ft.name}{" "}
+                          {ft.common_uses ? `– ${ft.common_uses}` : ""}
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 {errors.fabricTypeId && (
-                  <p className="text-xs text-destructive">{errors.fabricTypeId}</p>
+                  <p className="text-xs text-destructive">
+                    {errors.fabricTypeId}
+                  </p>
                 )}
               </div>
 
               {/* Fiber Composition */}
               <div className="space-y-2">
-                <Label htmlFor="fiberComposition">Komposisi Serat (opsional)</Label>
+                <Label htmlFor="fiberComposition">
+                  Komposisi Serat (opsional)
+                </Label>
                 <Input
                   id="fiberComposition"
                   placeholder="Contoh: 100% Katun, 65% Polyester 35% Cotton"
@@ -269,20 +318,38 @@ export default function NewListingPage() {
                 <Label htmlFor="productionSource">
                   Sumber Produksi <span className="text-destructive">*</span>
                 </Label>
-                <Select value={productionSource} onValueChange={(v) => v && setProductionSource(v)}>
-                  <SelectTrigger className={selectClass(!!errors.productionSource)}>
-                    <SelectValue placeholder="Pilih sumber produksi" />
+                <Select
+                  value={productionSource}
+                  onValueChange={(v) => v && setProductionSource(v)}
+                >
+                  <SelectTrigger
+                    className={cn(
+                      "w-full bg-white",
+                      selectClass(!!errors.productionSource),
+                    )}
+                  >
+                    <SelectValue placeholder="Pilih sumber produksi">
+                      {productionSource
+                        ? PRODUCTION_SOURCE_LABEL[
+                            productionSource as keyof typeof PRODUCTION_SOURCE_LABEL
+                          ]
+                        : "Pilih sumber produksi"}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(PRODUCTION_SOURCE_LABEL).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
+                    {Object.entries(PRODUCTION_SOURCE_LABEL).map(
+                      ([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ),
+                    )}
                   </SelectContent>
                 </Select>
                 {errors.productionSource && (
-                  <p className="text-xs text-destructive">{errors.productionSource}</p>
+                  <p className="text-xs text-destructive">
+                    {errors.productionSource}
+                  </p>
                 )}
               </div>
 
@@ -291,20 +358,38 @@ export default function NewListingPage() {
                 <Label htmlFor="hygieneStatus">
                   Status Kebersihan <span className="text-destructive">*</span>
                 </Label>
-                <Select value={hygieneStatus} onValueChange={(v) => v && setHygieneStatus(v)}>
-                  <SelectTrigger className={selectClass(!!errors.hygieneStatus)}>
-                    <SelectValue placeholder="Pilih status kebersihan" />
+                <Select
+                  value={hygieneStatus}
+                  onValueChange={(v) => v && setHygieneStatus(v)}
+                >
+                  <SelectTrigger
+                    className={cn(
+                      "w-full bg-white",
+                      selectClass(!!errors.hygieneStatus),
+                    )}
+                  >
+                    <SelectValue placeholder="Pilih status kebersihan">
+                      {hygieneStatus
+                        ? HYGIENE_STATUS_LABEL[
+                            hygieneStatus as keyof typeof HYGIENE_STATUS_LABEL
+                          ]
+                        : "Pilih status kebersihan"}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(HYGIENE_STATUS_LABEL).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
+                    {Object.entries(HYGIENE_STATUS_LABEL).map(
+                      ([value, label]) => (
+                        <SelectItem key={value} value={value}>
+                          {label}
+                        </SelectItem>
+                      ),
+                    )}
                   </SelectContent>
                 </Select>
                 {errors.hygieneStatus && (
-                  <p className="text-xs text-destructive">{errors.hygieneStatus}</p>
+                  <p className="text-xs text-destructive">
+                    {errors.hygieneStatus}
+                  </p>
                 )}
               </div>
 
@@ -314,10 +399,14 @@ export default function NewListingPage() {
                   <div className="flex items-start gap-2">
                     <Info className="mt-0.5 h-4 w-4 shrink-0 text-tenunara-terracotta" />
                     <div className="space-y-1 text-sm">
-                      <p className="font-medium text-tenunara-charcoal">Hasil Analisis AI</p>
+                      <p className="font-medium text-tenunara-charcoal">
+                        Hasil Analisis AI
+                      </p>
                       <p className="text-tenunara-teal">
-                        Warna: {aiResult.ai_dominant_color?.split(";")[1] || "-"} |
-                        Ukuran: {AI_SIZE_RANGE_LABEL[aiResult.ai_size_range] || "-"} |
+                        Warna:{" "}
+                        {aiResult.ai_dominant_color?.split(";")[1] || "-"} |
+                        Ukuran:{" "}
+                        {AI_SIZE_RANGE_LABEL[aiResult.ai_size_range] || "-"} |
                         Grade: {aiResult.ai_suggested_grade}
                       </p>
                     </div>
@@ -333,7 +422,9 @@ export default function NewListingPage() {
                   onChange={(e) => setHasOdor(e.target.checked)}
                   className="h-4 w-4 rounded border-tenunara-teal text-tenunara-terracotta focus:ring-tenunara-terracotta"
                 />
-                <span className="text-sm text-tenunara-charcoal">Kain memiliki bau</span>
+                <span className="text-sm text-tenunara-charcoal">
+                  Kain memiliki bau
+                </span>
               </label>
 
               {/* Weight row */}
@@ -352,13 +443,17 @@ export default function NewListingPage() {
                   className={selectClass(!!errors.totalWeightKg)}
                 />
                 {errors.totalWeightKg && (
-                  <p className="text-xs text-destructive">{errors.totalWeightKg}</p>
+                  <p className="text-xs text-destructive">
+                    {errors.totalWeightKg}
+                  </p>
                 )}
               </div>
 
               {/* Estimated Pieces */}
               <div className="space-y-2">
-                <Label htmlFor="estimatedPieces">Estimasi Jumlah Potongan (opsional)</Label>
+                <Label htmlFor="estimatedPieces">
+                  Estimasi Jumlah Potongan (opsional)
+                </Label>
                 <Input
                   id="estimatedPieces"
                   type="number"
@@ -384,7 +479,9 @@ export default function NewListingPage() {
                   className={selectClass(!!errors.pricePerKg)}
                 />
                 {errors.pricePerKg && (
-                  <p className="text-xs text-destructive">{errors.pricePerKg}</p>
+                  <p className="text-xs text-destructive">
+                    {errors.pricePerKg}
+                  </p>
                 )}
               </div>
 
@@ -396,12 +493,16 @@ export default function NewListingPage() {
                   onChange={(e) => setIsNegotiable(e.target.checked)}
                   className="h-4 w-4 rounded border-tenunara-teal text-tenunara-terracotta focus:ring-tenunara-terracotta"
                 />
-                <span className="text-sm text-tenunara-charcoal">Harga bisa nego</span>
+                <span className="text-sm text-tenunara-charcoal">
+                  Harga bisa nego
+                </span>
               </label>
 
               {/* Minimum Order */}
               <div className="space-y-2">
-                <Label htmlFor="minimumOrder">Minimum Order (kg, opsional)</Label>
+                <Label htmlFor="minimumOrder">
+                  Minimum Order (kg, opsional)
+                </Label>
                 <Input
                   id="minimumOrder"
                   type="number"
@@ -422,16 +523,25 @@ export default function NewListingPage() {
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   maxLength={300}
-                  className={cn("min-h-[80px] resize-none", selectClass(!!errors.notes))}
+                  className={cn(
+                    "min-h-[80px] resize-none",
+                    selectClass(!!errors.notes),
+                  )}
                 />
-                {errors.notes && <p className="text-xs text-destructive">{errors.notes}</p>}
-                <p className="text-xs text-tenunara-teal/60">{notes.length}/300 karakter</p>
+                {errors.notes && (
+                  <p className="text-xs text-destructive">{errors.notes}</p>
+                )}
+                <p className="text-xs text-tenunara-teal/60">
+                  {notes.length}/300 karakter
+                </p>
               </div>
 
               {/* Submit error */}
               {errors.submit && (
                 <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-4">
-                  <p className="text-sm font-medium text-destructive">{errors.submit}</p>
+                  <p className="text-sm font-medium text-destructive">
+                    {errors.submit}
+                  </p>
                 </div>
               )}
 
@@ -455,5 +565,5 @@ export default function NewListingPage() {
         )}
       </div>
     </div>
-  )
+  );
 }
