@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Menu,
   X,
@@ -16,71 +16,109 @@ import {
   User,
   Plus,
   ChevronDown,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { cn } from "@/lib/utils"
-import type { Profile } from "@/lib/types"
+} from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
+import type { Profile } from "@/lib/types";
 
-const LOGO = "TENUNARA"
+const LOGO = "TENUNARA";
 
 // TODO: Replace with dynamic logo/icon once brand logo asset is finalized
-const LOGO_MARK = "◈"
+const LOGO_MARK = "◈";
 
 interface NavLink {
-  label: string
-  href: string
-  icon: React.ReactNode
+  label: string;
+  href: string;
+  icon: React.ReactNode;
 }
 
 interface NavbarProps {
-  user: Profile | null
-  onLogout: () => Promise<void>
+  user: Profile | null;
+  onLogout: () => Promise<void>;
 }
 
 const sellerLinks: NavLink[] = [
-  { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
-  { label: "Listing Saya", href: "/dashboard/listings", icon: <Package className="h-4 w-4" /> },
-  { label: "Pesanan Masuk", href: "/dashboard/orders", icon: <ShoppingCart className="h-4 w-4" /> },
-  { label: "Sengketa", href: "/dashboard/disputes", icon: <Scale className="h-4 w-4" /> },
+  {
+    label: "Dashboard",
+    href: "/dashboard",
+    icon: <LayoutDashboard className="h-4 w-4" />,
+  },
+  {
+    label: "Listing Saya",
+    href: "/dashboard/listings",
+    icon: <Package className="h-4 w-4" />,
+  },
+  {
+    label: "Pesanan Masuk",
+    href: "/dashboard/orders",
+    icon: <ShoppingCart className="h-4 w-4" />,
+  },
+  {
+    label: "Sengketa",
+    href: "/dashboard/disputes",
+    icon: <Scale className="h-4 w-4" />,
+  },
   { label: "ESG", href: "/dashboard/esg", icon: <Leaf className="h-4 w-4" /> },
-]
+];
 
 const buyerLinks: NavLink[] = [
-  { label: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
-  { label: "Cari Material", href: "/dashboard/browse", icon: <Search className="h-4 w-4" /> },
-  { label: "Pesanan Saya", href: "/dashboard/orders", icon: <ShoppingCart className="h-4 w-4" /> },
-  { label: "Sengketa", href: "/dashboard/disputes", icon: <Scale className="h-4 w-4" /> },
+  {
+    label: "Dashboard",
+    href: "/dashboard",
+    icon: <LayoutDashboard className="h-4 w-4" />,
+  },
+  {
+    label: "Cari Material",
+    href: "/dashboard/browse",
+    icon: <Search className="h-4 w-4" />,
+  },
+  {
+    label: "Pesanan Saya",
+    href: "/dashboard/orders",
+    icon: <ShoppingCart className="h-4 w-4" />,
+  },
+  {
+    label: "Sengketa",
+    href: "/dashboard/disputes",
+    icon: <Scale className="h-4 w-4" />,
+  },
   { label: "ESG", href: "/dashboard/esg", icon: <Leaf className="h-4 w-4" /> },
-]
+];
 
 export function Navbar({ user, onLogout }: NavbarProps) {
-  const pathname = usePathname()
-  const router = useRouter()
-  const [scrolled, setScrolled] = useState(false)
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const pathname = usePathname();
+  const router = useRouter();
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10)
-    window.addEventListener("scroll", handleScroll, { passive: true })
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+    const handleScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const isActive = (href: string) => {
-    if (href === "/dashboard") return pathname === "/dashboard"
-    return pathname.startsWith(href)
-  }
+    if (href === "/dashboard") return pathname === "/dashboard";
+    return pathname.startsWith(href);
+  };
 
-  const isSeller = user?.role === "seller" || user?.role === "umkm"
-  const navLinks = isSeller ? sellerLinks : buyerLinks
+  const isSeller = user?.role === "seller" || user?.role === "umkm";
+  const navLinks = isSeller ? sellerLinks : buyerLinks;
 
   return (
     <header
@@ -95,16 +133,24 @@ export function Navbar({ user, onLogout }: NavbarProps) {
           {/* Mobile hamburger — only show when logged in */}
           {user && (
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-              <SheetTrigger>
-                <Button variant="ghost" size="icon" className="shrink-0 lg:hidden">
-                  <Menu className="h-5 w-5" />
-                  <span className="sr-only">Buka menu</span>
-                </Button>
+              <SheetTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0 lg:hidden"
+                  />
+                }
+              >
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Buka menu</span>
               </SheetTrigger>
               <SheetContent side="left" className="w-72 p-0">
                 <SheetHeader className="border-b border-border px-6 py-4">
                   <SheetTitle className="flex items-center gap-2 text-left text-lg font-bold text-tenunara-charcoal">
-                    <span className="text-tenunara-terracotta">{LOGO_MARK}</span>
+                    <span className="text-tenunara-terracotta">
+                      {LOGO_MARK}
+                    </span>
                     {LOGO}
                   </SheetTitle>
                 </SheetHeader>
@@ -131,9 +177,16 @@ export function Navbar({ user, onLogout }: NavbarProps) {
           )}
 
           {/* Logo */}
-          <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-2">
-            <span className="text-xl font-bold text-tenunara-terracotta">{LOGO_MARK}</span>
-            <span className="text-lg font-bold text-tenunara-charcoal">{LOGO}</span>
+          <Link
+            href={user ? "/dashboard" : "/"}
+            className="flex items-center gap-2"
+          >
+            <span className="text-xl font-bold text-tenunara-terracotta">
+              {LOGO_MARK}
+            </span>
+            <span className="text-lg font-bold text-tenunara-charcoal">
+              {LOGO}
+            </span>
           </Link>
         </div>
 
@@ -177,30 +230,34 @@ export function Navbar({ user, onLogout }: NavbarProps) {
             </>
           ) : (
             <DropdownMenu>
-              <DropdownMenuTrigger>
-                <Button
-                  variant="ghost"
-                  className="flex items-center gap-2 rounded-xl px-3 py-2 hover:bg-tenunara-mint/50"
-                >
-                  <Avatar className="h-8 w-8">
-                    {/* TODO: Replace initials with actual user avatar image once upload feature is ready */}
-                    <AvatarFallback className="bg-tenunara-terracotta text-xs font-semibold text-white">
-                      {user.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")
-                        .slice(0, 2)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="hidden text-sm font-medium text-tenunara-charcoal md:inline">
-                    {user.name}
-                  </span>
-                  <ChevronDown className="hidden h-4 w-4 text-tenunara-teal md:inline" />
-                </Button>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    className="flex items-center gap-2 rounded-xl px-3 py-2 hover:bg-tenunara-mint/50"
+                  />
+                }
+              >
+                <Avatar className="h-8 w-8">
+                  {/* TODO: Replace initials with actual user avatar image once upload feature is ready */}
+                  <AvatarFallback className="bg-tenunara-terracotta text-xs font-semibold text-white">
+                    {user.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .slice(0, 2)}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="hidden text-sm font-medium text-tenunara-charcoal md:inline">
+                  {user.name}
+                </span>
+                <ChevronDown className="hidden h-4 w-4 text-tenunara-teal md:inline" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2">
                 <div className="border-b border-border px-3 py-2">
-                  <p className="text-sm font-semibold text-tenunara-charcoal">{user.name}</p>
+                  <p className="text-sm font-semibold text-tenunara-charcoal">
+                    {user.name}
+                  </p>
                   {user.company && (
                     <p className="text-xs text-tenunara-teal">{user.company}</p>
                   )}
@@ -226,5 +283,5 @@ export function Navbar({ user, onLogout }: NavbarProps) {
         </div>
       </div>
     </header>
-  )
+  );
 }

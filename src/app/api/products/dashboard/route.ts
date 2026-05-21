@@ -75,12 +75,11 @@ export async function GET(request: Request) {
     let query = supabaseAdmin
       .from("products")
       .select(
-        `id, images_url, fiber_composition, production_source, total_weight_kg,
+        `id, umkm_id, images_url, fiber_composition, production_source, total_weight_kg,
          estimated_pieces, price_per_kg, is_negotiable, minimum_order_kg,
          ai_dominant_color, ai_pattern, ai_size_range, ai_confidence_score,
          ai_suggested_grade, ai_reasoning, final_grade, status, created_at,
-         fabric_types!inner(name, category),
-         umkm!inner(nama_toko, kota, kabupaten, alamat)`,
+         fabric_types!inner(name, category)`,
         { count: "exact" },
       );
 
@@ -90,7 +89,6 @@ export async function GET(request: Request) {
     // Filters
     if (fabricType) query = query.eq("fabric_type_id", fabricType);
     if (grade) query = query.eq("final_grade", grade);
-    if (kota) query = query.ilike("umkm.kota", `%${kota}%`);
     if (minPrice !== null) query = query.gte("price_per_kg", minPrice);
     if (maxPrice !== null) query = query.lte("price_per_kg", maxPrice);
 
@@ -109,11 +107,25 @@ export async function GET(request: Request) {
       return errorResponse("Gagal memuat produk", 500, error.message);
     }
 
+    // ── Fetch UMKM data separately and merge in-memory ──
+    // (products.umkm_id → auth.users, not public.umkm, so no direct join)
+    const umkmIds = [...new Set((data || []).map((p) => (p as Record<string, unknown>).umkm_id as string).filter(Boolean))];
+    const umkmMap = new Map<string, Record<string, unknown>>();
+    if (umkmIds.length > 0) {
+      const { data: umkmData } = await supabaseAdmin
+        .from("umkm")
+        .select("id, nama_toko, kota, kabupaten, alamat")
+        .in("id", umkmIds);
+      for (const u of umkmData || []) {
+        umkmMap.set(u.id, u);
+      }
+    }
+
     // Map to dashboard response shape
     const products = (data || []).map((item) => {
       const raw = item as Record<string, unknown>;
       const ft = raw.fabric_types as Record<string, unknown> | undefined;
-      const u = raw.umkm as Record<string, unknown> | undefined;
+      const u = umkmMap.get(raw.umkm_id as string);
       const images = (raw.images_url as string[]) || [];
       const aiColor = (raw.ai_dominant_color as string) || null;
 
@@ -135,6 +147,7 @@ export async function GET(request: Request) {
           short_reason: truncateReason(raw.ai_reasoning as string | null, 100),
         },
         umkm: {
+          id: (u?.id as string) || "",
           store_name: (u?.nama_toko as string) || "",
           kota: (u?.kota as string) || "",
           kabupaten: (u?.kabupaten as string) || "",

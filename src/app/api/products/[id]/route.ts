@@ -20,12 +20,20 @@ export async function GET(
       return errorResponse("Produk tidak ditemukan", 404);
     }
 
+    // Get seller (UMKM) info
+    const { data: seller } = await supabaseAdmin
+      .from("umkm")
+      .select("nama_penjual, nama_toko, kota")
+      .eq("id", product.umkm_id)
+      .single();
+
     return jsonResponse({
       data: {
         ...product,
         fabric_name: product.fabric_types?.name,
         fabric_category: product.fabric_types?.category,
         defects: product.product_defect_details || [],
+        seller: seller || null,
       },
     });
   } catch (err) {

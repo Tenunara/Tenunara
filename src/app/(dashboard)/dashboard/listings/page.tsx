@@ -1,11 +1,12 @@
 "use client"
 
-import { useEffect, useState, use } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Plus, Package } from "lucide-react"
 import { ListingCard } from "@/components/listing/listing-card"
-import { LoadingSpinner, EmptyState, ErrorState } from "@/components/shared"
+import { EmptyState, ErrorState } from "@/components/shared"
 import { Button } from "@/components/ui/button"
+import { fetchMyProducts } from "@/lib/api"
 import type { ListingWithSeller, ListingStatus } from "@/lib/types"
 
 const TABS: { key: ListingStatus | "all"; label: string }[] = [
@@ -42,13 +43,11 @@ export default function MyListingsPage() {
   // TODO: Replace mock fetch with real API call:
   // GET /api/listings?seller_id={userId}
   useEffect(() => {
-    fetch("/data/temp_data_listings.json")
-      .then((res) => {
-        if (!res.ok) throw new Error("Gagal memuat data")
-        return res.json()
-      })
-      .then((json) => {
-        setListings(json.data as ListingWithSeller[])
+    const umkmId = localStorage.getItem("sb-user-id") || ""
+
+    fetchMyProducts(umkmId)
+      .then((products) => {
+        setListings(products)
         setLoading(false)
       })
       .catch((err) => {
