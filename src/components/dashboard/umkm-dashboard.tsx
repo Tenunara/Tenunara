@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { TrendingUp, Trash2, Leaf, Users, Loader2 } from "lucide-react";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { TrendChart } from "@/components/dashboard/trend-chart";
@@ -31,7 +31,6 @@ export function UmkmDashboard() {
   const [data, setData] = useState<UmkmDashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const reportRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("sb-access-token");
@@ -90,11 +89,11 @@ export function UmkmDashboard() {
   const craftsmanSavings = data.impact.local_economic_multiplier * 0.3;
 
   return (
-    <div ref={reportRef} className="space-y-6">
+    <div className="space-y-6">
       {/* Header with PDF export button */}
       <div className="flex items-start justify-between">
         <PageHeader />
-        <SustainabilityReportButton reportRef={reportRef} />
+        <SustainabilityReportButton />
       </div>
 
       {/* Row 1: 4 Stat Cards */}

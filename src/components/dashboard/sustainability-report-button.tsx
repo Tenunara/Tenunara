@@ -1,54 +1,63 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { FileDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 
-interface SustainabilityReportButtonProps {
-  reportRef: React.RefObject<HTMLDivElement | null>;
+// ─── Token helper ──────────────────────────────────────────
+function getToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return (
+    localStorage.getItem("sb-access-token") ||
+    localStorage.getItem("access_token")
+  );
 }
 
-export function SustainabilityReportButton({
-  reportRef,
-}: SustainabilityReportButtonProps) {
+// ─── Component ─────────────────────────────────────────────
+export function SustainabilityReportButton() {
   const [exporting, setExporting] = useState(false);
 
   const handleExport = async () => {
-    if (!reportRef.current) return;
     setExporting(true);
 
     try {
-      const canvas = await html2canvas(reportRef.current, {
-        scale: 2,
-        backgroundColor: "#ffffff",
-        logging: false,
-        useCORS: true,
+      const token = getToken();
+      const res = await fetch("/api/dashboard/umkm/report", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const imgWidth = pageWidth - 20;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      let heightLeft = imgHeight;
-      let position = 10;
-
-      pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
-      heightLeft -= pdf.internal.pageSize.getHeight() - 20;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight + 10;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
-        heightLeft -= pdf.internal.pageSize.getHeight() - 20;
+      if (!res.ok) {
+        throw new Error(
+          res.status === 401
+            ? "Sesi habis. Silakan login ulang."
+            : "Gagal memuat laporan keberlanjutan.",
+        );
       }
 
-      pdf.save("laporan-keberlanjutan-tenunara.pdf");
+      const html = await res.text();
+
+      // Open a new window with the rendered report, then trigger print
+      const printWindow = window.open("", "_blank");
+      if (!printWindow) {
+        throw new Error(
+          "Popup diblokir. Izinkan popup untuk mengunduh laporan.",
+        );
+      }
+
+      printWindow.document.open();
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.focus();
+
+      // Wait for fonts / images to settle, then open native print dialog
+      setTimeout(() => {
+        printWindow.print();
+      }, 1500);
     } catch (err) {
-      console.error("PDF export failed:", err);
+      const message =
+        err instanceof Error ? err.message : "Terjadi kesalahan";
+      console.error("Report export failed:", err);
+      alert(message);
     } finally {
       setExporting(false);
     }
@@ -58,7 +67,7 @@ export function SustainabilityReportButton({
     <Button
       onClick={handleExport}
       disabled={exporting}
-      className="flex items-center gap-2 rounded-xl bg-tenunara-terracotta px-5 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[#8A3F31] disabled:opacity-60"
+      className="flex items-center gap-2 rounded-xl bg-tenunara-terracotta px-5 py-2.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-tenunara-terracotta/90 disabled:opacity-60"
     >
       {exporting ? (
         <Loader2 className="h-4 w-4 animate-spin" />
@@ -66,7 +75,7 @@ export function SustainabilityReportButton({
         <FileDown className="h-4 w-4" />
       )}
       {exporting
-        ? "Mengexport..."
+        ? "Menyiapkan laporan..."
         : "Unduh Laporan Keberlanjutan Resmi (POJK 51)"}
     </Button>
   );
