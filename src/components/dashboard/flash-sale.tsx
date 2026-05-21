@@ -11,6 +11,7 @@ interface FlashItem {
   price: number
   originalPrice: number
   discount: number
+  imageUrl?: string
 }
 
 interface FlashSaleProps {
@@ -55,7 +56,15 @@ export function FlashSale({ items }: FlashSaleProps) {
             className="w-44 flex-shrink-0 overflow-hidden rounded-xl border border-border bg-white transition-all hover:shadow-md"
           >
             <div className="relative aspect-square bg-tenunara-canvas">
-              <div className="absolute inset-4 rounded-lg bg-gradient-to-br from-tenunara-mint to-tenunara-canvas opacity-50" />
+              {item.imageUrl ? (
+                <img
+                  src={item.imageUrl}
+                  alt={item.productName}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              ) : (
+                <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-tenunara-mint to-tenunara-canvas opacity-50" />
+              )}
               <span className="absolute left-2 top-2 rounded-md bg-tenunara-terracotta px-2 py-0.5 text-[10px] font-bold text-white">
                 -{item.discount}%
               </span>
