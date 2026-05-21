@@ -2,14 +2,23 @@
 
 import { CheckCircle2, AlertTriangle, RefreshCw } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { MATERIAL_LABEL, COLOR_LABEL, SIZE_LABEL, CONDITION_LABEL, GRADE_BG } from "@/lib/constants"
-import type { AnalysisResult } from "@/lib/types"
+import {
+  AI_SIZE_RANGE_LABEL,
+  DEFECT_TYPE_LABEL,
+} from "@/lib/constants"
+import type { AIAnalysisResult, Grade } from "@/lib/types"
 
 interface AIResultDisplayProps {
-  result: AnalysisResult | null
+  result: AIAnalysisResult | null
   isLoading: boolean
   onConfirm: () => void
   onRetake: () => void
+}
+
+const GRADE_BG: Record<Grade, string> = {
+  A: "bg-grade-success/10 text-grade-success",
+  B: "bg-grade-warning/10 text-grade-warning",
+  C: "bg-grade-info/10 text-grade-info",
 }
 
 function SkeletonLine({ className }: { className?: string }) {
@@ -41,13 +50,15 @@ export function AIResultDisplay({ result, isLoading, onConfirm, onRetake }: AIRe
 
   if (!result) return null
 
-  const isHighConfidence = result.confidence >= 0.6
+  const isHighConfidence = result.ai_confidence_score >= 0.6
+
+  // Parse color from "#hex;ColorName" format
+  const colorName = result.ai_dominant_color?.split(";")[1] || result.ai_dominant_color || "-"
 
   const fields: { label: string; value: string }[] = [
-    { label: "Material", value: MATERIAL_LABEL[result.material] || result.material },
-    { label: "Warna Dominan", value: COLOR_LABEL[result.dominant_color] || result.dominant_color },
-    { label: "Estimasi Ukuran", value: SIZE_LABEL[result.size_estimate] || result.size_estimate },
-    { label: "Kondisi", value: CONDITION_LABEL[result.condition] || result.condition },
+    { label: "Warna Dominan", value: colorName },
+    { label: "Pola", value: result.ai_pattern || "-" },
+    { label: "Estimasi Ukuran", value: AI_SIZE_RANGE_LABEL[result.ai_size_range] || result.ai_size_range || "-" },
   ]
 
   return (
@@ -66,8 +77,8 @@ export function AIResultDisplay({ result, isLoading, onConfirm, onRetake }: AIRe
           )}
         >
           {isHighConfidence
-            ? `AI memiliki kepercayaan tinggi (${Math.round(result.confidence * 100)}%)`
-            : `AI memiliki tingkat kepercayaan rendah (${Math.round(result.confidence * 100)}%). Mohon periksa kembali data.`}
+            ? `AI memiliki kepercayaan tinggi (${Math.round(result.ai_confidence_score * 100)}%)`
+            : `AI memiliki tingkat kepercayaan rendah (${Math.round(result.ai_confidence_score * 100)}%). Mohon periksa kembali data.`}
         </span>
       </div>
 
@@ -84,13 +95,40 @@ export function AIResultDisplay({ result, isLoading, onConfirm, onRetake }: AIRe
           <span
             className={cn(
               "mt-0.5 inline-block rounded-full px-2.5 py-0.5 text-xs font-bold",
-              GRADE_BG[result.grade],
+              GRADE_BG[result.ai_suggested_grade],
             )}
           >
-            Grade {result.grade}
+            Grade {result.ai_suggested_grade}
           </span>
         </div>
       </div>
+
+      {/* AI Reasoning */}
+      {result.ai_reasoning && (
+        <div className="rounded-xl bg-tenunara-mint/30 p-3">
+          <p className="text-xs font-medium text-tenunara-teal mb-1">Alasan AI:</p>
+          <p className="text-sm text-tenunara-charcoal">{result.ai_reasoning}</p>
+        </div>
+      )}
+
+      {/* Defects */}
+      {result.defects && result.defects.length > 0 && (
+        <div>
+          <p className="text-xs font-medium text-tenunara-teal mb-2">Cacat Terdeteksi:</p>
+          <div className="space-y-1.5">
+            {result.defects.map((d, i) => (
+              <div key={i} className="flex items-center justify-between rounded-xl border border-border px-3 py-2">
+                <span className="text-sm text-tenunara-charcoal">
+                  {DEFECT_TYPE_LABEL[d.defect_type] || d.defect_type}
+                </span>
+                <span className="text-xs text-tenunara-teal">
+                  {d.defect_percentage}% area (confidence: {Math.round(d.confidence_score * 100)}%)
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Actions */}
       <div className="flex gap-3 pt-2">
