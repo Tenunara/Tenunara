@@ -120,6 +120,7 @@ export async function POST(request: Request) {
         ai_size_range: ai_result?.ai_size_range || null,
         ai_confidence_score: ai_result?.ai_confidence_score || null,
         ai_suggested_grade: suggestedGrade,
+        ai_reasoning: ai_result?.ai_reasoning || null,
         ai_model_version: ai_result?.ai_model_version || null,
         ai_processed_at: now,
         final_grade: finalGrade,

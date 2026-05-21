@@ -39,6 +39,40 @@ function seededRandom(seed: number): () => number {
   };
 }
 
+function generateReasoning(grade: Grade, defects: { defect_type: string; defect_percentage: number }[]): string {
+  const totalDefectArea = defects.reduce((sum, d) => sum + d.defect_percentage, 0);
+  const parts: string[] = [];
+
+  if (totalDefectArea < 3) {
+    parts.push("Kondisi kain sangat baik dengan area cacat minimal.");
+  } else if (totalDefectArea < 8) {
+    parts.push("Kondisi kain cukup baik dengan beberapa area cacat minor.");
+  } else {
+    parts.push("Terdapat area cacat yang cukup signifikan pada kain.");
+  }
+
+  if (defects.length > 0) {
+    const mainDefect = defects[0];
+    const defectLabels: Record<string, string> = {
+      noda: "noda yang dapat dibersihkan",
+      sobek: "sobekan pada permukaan kain",
+      lubang: "lubang kecil pada beberapa bagian",
+      warna_pudar: "warna yang mulai pudar",
+      cacat_tenun: "cacat pada proses penenunan",
+    };
+    parts.push(`Cacat dominan: ${defectLabels[mainDefect.defect_type] || mainDefect.defect_type} (${mainDefect.defect_percentage}% area).`);
+  }
+
+  const reasonMap: Record<Grade, string> = {
+    A: "Kualitas grade A: kain layak pakai langsung tanpa perbaikan berarti, cocok untuk produk jadi premium.",
+    B: "Kualitas grade B: kain masih layak pakai dengan sedikit pemrosesan ulang, cocok untuk produk medium.",
+    C: "Kualitas grade C: kain memerlukan pemrosesan ulang signifikan, cocok untuk produk daur ulang atau bahan baku turunan.",
+  };
+  parts.push(reasonMap[grade]);
+
+  return parts.join(" ");
+}
+
 function simulateAnalysis(imageCount: number) {
   const rand = seededRandom(Date.now() % 100000);
 
@@ -66,13 +100,17 @@ function simulateAnalysis(imageCount: number) {
     });
   }
 
+  const reasoning = generateReasoning(suggestedGrade, defects);
+
   return {
     ai_dominant_color: `${color.hex};${color.name}`,
     ai_pattern: pattern,
     ai_size_range: sizeRange,
     ai_confidence_score: confidenceScore,
     ai_suggested_grade: suggestedGrade,
+    ai_reasoning: reasoning,
     ai_model_version: "v1.0-grading",
+    ai_processed_at: new Date().toISOString(),
     defects,
   };
 }
