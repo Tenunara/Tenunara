@@ -20,10 +20,10 @@ export function StatCard({
   trendLabel,
 }: StatCardProps) {
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-[#E5DDD5] bg-white p-5 shadow-sm">
+    <div className="group flex flex-col gap-3 rounded-2xl border border-tenunara-charcoal/[0.06] bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex items-start justify-between">
         <span className="text-sm font-medium text-tenunara-teal">{label}</span>
-        <div className="rounded-xl bg-[#E7F2F280] p-2.5 text-tenunara-terracotta">
+        <div className="rounded-xl bg-tenunara-mint/50 p-2.5 text-tenunara-terracotta transition-transform group-hover:scale-110">
           {icon}
         </div>
       </div>
@@ -32,7 +32,7 @@ export function StatCard({
           {value}
         </span>
         {sublabel && (
-          <span className="ml-1.5 text-xs text-[#4F6263B3]">{sublabel}</span>
+          <span className="ml-1.5 text-xs text-tenunara-teal/70">{sublabel}</span>
         )}
       </div>
       {trend && trendLabel && (
@@ -40,9 +40,9 @@ export function StatCard({
           <span
             className={cn(
               "text-xs font-medium",
-              trend === "up" && "text-[#2E7D32]",
-              trend === "down" && "text-[#C62828]",
-              trend === "neutral" && "text-[#4F626399]",
+              trend === "up" && "text-grade-success",
+              trend === "down" && "text-grade-error",
+              trend === "neutral" && "text-tenunara-teal/60",
             )}
           >
             {trend === "up" && "↑"}

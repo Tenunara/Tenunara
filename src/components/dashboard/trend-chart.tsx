@@ -14,13 +14,13 @@ import type { DashboardTrend } from "@/lib/types";
 
 const COLORS = {
   generated: "#9CAFAA",
-  diverted: "#D4A68A",
+  diverted: "#9C4A3C",
 };
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-xl border border-[#E5DDD5] bg-white p-3 shadow-lg">
+    <div className="rounded-xl border border-tenunara-charcoal/[0.06] bg-white p-3 shadow-lg">
       <p className="mb-1 text-xs font-semibold text-tenunara-charcoal">
         {label}
       </p>
@@ -40,7 +40,7 @@ interface TrendChartProps {
 export function TrendChart({ data }: TrendChartProps) {
   if (data.length === 0) {
     return (
-      <div className="flex h-64 items-center justify-center rounded-2xl border border-[#E5DDD5] bg-white text-sm text-[#4F626399]">
+      <div className="flex h-64 items-center justify-center rounded-2xl border border-tenunara-charcoal/[0.06] bg-white text-sm text-tenunara-teal/60">
         Belum ada data tren bulanan
       </div>
     );
@@ -53,11 +53,11 @@ export function TrendChart({ data }: TrendChartProps) {
   }));
 
   return (
-    <div className="rounded-2xl border border-[#E5DDD5] bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-tenunara-charcoal/[0.06] bg-white p-5 shadow-sm">
       <h3 className="mb-1 text-sm font-semibold text-tenunara-charcoal">
         Tren Bulanan
       </h3>
-      <p className="mb-4 text-xs text-[#4F626399]">
+      <p className="mb-4 text-xs text-tenunara-teal/60">
         Perbandingan limbah dihasilkan vs dialihkan per bulan
       </p>
       <ResponsiveContainer width="100%" height={280}>
