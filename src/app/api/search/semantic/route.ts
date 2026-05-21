@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { jsonResponse, errorResponse } from "@/lib/api-response";
 import { parseQueryWithGemini } from "@/app/api/search/parse-query/route";
-import { generateEmbedding } from "@/app/api/search/generate-embedding/route";
+import { generateEmbedding } from "@/lib/embedding";
 
 // ─── Configuration ─────────────────────────────────────────────────
 
@@ -95,14 +95,29 @@ export async function POST(request: NextRequest) {
     }
 
     // ── 2. Parse query with Gemini ──────────────────────────────────
-    const parsed = await parseQueryWithGemini(trimmedQuery);
+    let parsed: Record<string, unknown> = { search_text: trimmedQuery };
+    try {
+      parsed = await parseQueryWithGemini(trimmedQuery);
+    } catch (parseErr) {
+      console.error("parse-query error:", parseErr);
+    }
 
     // ── 3. Embed query with Voyage AI ───────────────────────────────
     const searchText = typeof parsed.search_text === "string" && parsed.search_text.trim()
       ? parsed.search_text
       : trimmedQuery;
 
-    const embedding = await generateEmbedding(searchText, "query");
+    let embedding: number[];
+    try {
+      embedding = await generateEmbedding(searchText, "query");
+    } catch (embedErr) {
+      console.error("generate-embedding error:", embedErr);
+      return errorResponse(
+        "Gagal generate embedding",
+        500,
+        embedErr instanceof Error ? embedErr.message : "Unknown error",
+      );
+    }
 
     // ── 4. Vector search via Supabase RPC ───────────────────────────
     const { data: candidates, error: rpcError } = await supabaseAdmin.rpc(
@@ -119,7 +134,7 @@ export async function POST(request: NextRequest) {
 
     if (rpcError) {
       console.error("RPC error:", rpcError);
-      return errorResponse("Pencarian gagal", 500);
+      return errorResponse("Pencarian gagal", 500, rpcError.message);
     }
 
     // ── 5. Re-ranking ───────────────────────────────────────────────
@@ -152,6 +167,10 @@ export async function POST(request: NextRequest) {
     return jsonResponse({ results, parsed_query: parsed, from_cache: false });
   } catch (err) {
     console.error("semantic search error:", err);
-    return errorResponse("Pencarian gagal", 500);
+    return errorResponse(
+      "Pencarian gagal",
+      500,
+      err instanceof Error ? err.message : "Unknown error",
+    );
   }
 }

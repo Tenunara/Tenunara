@@ -2,6 +2,19 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { jsonResponse, errorResponse } from "@/lib/api-response";
 import { getAuthenticatedUser, AuthError } from "@/lib/api-auth";
 import type { UpdateProductRequest } from "@/lib/types";
+import { indexProductEmbedding } from "@/lib/semantic-indexing";
+
+const EMBEDDING_FIELDS = new Set<keyof UpdateProductRequest>([
+  "fabric_type_id",
+  "production_source",
+  "hygiene_status",
+  "has_odor",
+  "total_weight_kg",
+  "minimum_order_kg",
+  "is_negotiable",
+  "notes",
+  "final_grade",
+]);
 
 export async function GET(
   _request: Request,
@@ -74,7 +87,7 @@ export async function PUT(
     // Verify ownership
     const { data: existing, error: fetchError } = await supabaseAdmin
       .from("products")
-      .select("id, umkm_id, ai_suggested_grade, is_grade_overridden")
+      .select("id, umkm_id, status, ai_suggested_grade, is_grade_overridden")
       .eq("id", id)
       .single();
 
@@ -117,6 +130,19 @@ export async function PUT(
 
     if (updateError || !updated) {
       return errorResponse("Gagal mengupdate produk", 500, updateError?.message);
+    }
+
+    const updatedFields = Object.keys(updates) as (keyof UpdateProductRequest)[];
+    const hasEmbeddingChanges = updatedFields.some((field) => EMBEDDING_FIELDS.has(field));
+    const statusChangedToPublished = updates.status === "published" && existing.status !== "published";
+    const shouldIndex = updated.status === "published" && (statusChangedToPublished || hasEmbeddingChanges);
+
+    if (shouldIndex) {
+      try {
+        await indexProductEmbedding(id);
+      } catch (indexErr) {
+        console.error("Auto-index error:", indexErr);
+      }
     }
 
     return jsonResponse({
