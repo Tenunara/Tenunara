@@ -68,11 +68,6 @@ const sellerLinks: NavLink[] = [
     href: "/dashboard/orders",
     icon: <ShoppingCart className="h-4 w-4" />,
   },
-  {
-    label: "Sengketa",
-    href: "/dashboard/disputes",
-    icon: <Scale className="h-4 w-4" />,
-  },
   { label: "ESG", href: "/dashboard/esg", icon: <Leaf className="h-4 w-4" /> },
 ];
 
@@ -91,11 +86,6 @@ const buyerLinks: NavLink[] = [
     label: "Pesanan Saya",
     href: "/dashboard/orders",
     icon: <ShoppingCart className="h-4 w-4" />,
-  },
-  {
-    label: "Sengketa",
-    href: "/dashboard/disputes",
-    icon: <Scale className="h-4 w-4" />,
   },
   { label: "ESG", href: "/dashboard/esg", icon: <Leaf className="h-4 w-4" /> },
 ];
