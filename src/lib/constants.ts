@@ -84,3 +84,34 @@ export const CONDITION_LABEL: Record<string, string> = Object.fromEntries(
 export const SIZE_LABEL: Record<string, string> = Object.fromEntries(
   SIZE_OPTIONS.map((o) => [o.value, o.label])
 )
+
+// ============================================================
+// PRODUCT CONSTANTS (for new product schema)
+// ============================================================
+
+export const PRODUCTION_SOURCE_LABEL: Record<string, string> = {
+  sisa_pola: "Sisa Potongan Pola",
+  cacat_maklun: "Cacat Maklun",
+  akhir_roll: "Akhir Roll",
+}
+
+export const HYGIENE_STATUS_LABEL: Record<string, string> = {
+  clean_washed: "Bersih (Sudah Dicuci)",
+  clean_fresh_cut: "Bersih (Sisa Potongan Baru)",
+  dusty: "Berdebu",
+}
+
+export const AI_SIZE_RANGE_LABEL: Record<string, string> = {
+  lt15cm: "<15 cm (Kecil)",
+  "15-30cm": "15-30 cm (Kecil)",
+  "30-50cm": "30-50 cm (Sedang)",
+  gt50cm: ">50 cm (Besar)",
+}
+
+export const DEFECT_TYPE_LABEL: Record<string, string> = {
+  noda: "Noda Oli Mesin",
+  sobek: "Sobekan / Lubang",
+  lubang: "Lubang",
+  warna_pudar: "Warna Pudar",
+  cacat_tenun: "Cacat Tenun",
+}

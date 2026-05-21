@@ -227,6 +227,7 @@ export interface ProductRow {
   ai_size_range: AiSizeRange | null
   ai_confidence_score: number | null
   ai_suggested_grade: Grade | null
+  ai_reasoning: string | null
   ai_model_version: string | null
   ai_processed_at: string | null
   final_grade: Grade | null
@@ -296,6 +297,7 @@ export interface AIAnalysisResult {
   ai_size_range: AiSizeRange
   ai_confidence_score: number
   ai_suggested_grade: Grade
+  ai_reasoning: string
   ai_model_version: string
   ai_processed_at: string
   defects: {
