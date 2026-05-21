@@ -34,6 +34,11 @@ function parseDimensions(dimensions: string): { maxDimensionCm: number } | null 
 }
 
 export function getSizeCategory(dimensions: string): SizeCategory {
+  const normalized = dimensions.trim();
+  if (normalized === "lt15cm" || normalized === "15-30cm" || normalized === "30-50cm" || normalized === "gt50cm") {
+    return normalized as SizeCategory;
+  }
+
   const parsed = parseDimensions(dimensions);
   if (!parsed) return "gt50cm"; // fallback: assume large
 

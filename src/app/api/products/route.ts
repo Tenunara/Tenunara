@@ -2,7 +2,8 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 import { jsonResponse, errorResponse } from "@/lib/api-response";
 import { getAuthenticatedUser, AuthError } from "@/lib/api-auth";
 import type { CreateProductRequest, ProductStatus, AIAnalysisResult } from "@/lib/types";
-import { gradeProduct } from "@/lib/grading-engine";
+import { gradeProduct, getSizeCategory } from "@/lib/grading-engine";
+import { indexProductEmbedding } from "@/lib/semantic-indexing";
 
 export async function GET(request: Request) {
   try {
@@ -98,6 +99,9 @@ export async function POST(request: Request) {
     const ai_result = body.ai_result;
     const now = ai_result?.ai_processed_at || new Date().toISOString();
     const suggestedGrade = ai_result?.ai_suggested_grade || null;
+    const aiSizeRange = ai_result?.ai_size_range
+      ? getSizeCategory(ai_result.ai_size_range)
+      : null;
 
     const { data: product, error: createError } = await supabaseAdmin
       .from("products")
@@ -117,10 +121,10 @@ export async function POST(request: Request) {
         notes: body.notes || null,
         ai_dominant_color: ai_result?.ai_dominant_color || null,
         ai_pattern: ai_result?.ai_pattern || null,
-        ai_size_range: ai_result?.ai_size_range || null,
+        ai_size_range: aiSizeRange,
         ai_confidence_score: ai_result?.ai_confidence_score || null,
         ai_suggested_grade: suggestedGrade,
-        ai_reasoning: ai_result?.ai_reasoning || null,
+        ai_reasoning: ai_result?.ai_reasoning ?? "",
         ai_model_version: ai_result?.ai_model_version || null,
         ai_processed_at: now,
         final_grade: null,
@@ -190,6 +194,14 @@ export async function POST(request: Request) {
         is_grade_overridden: gradingResult.is_grade_overridden,
       })
       .eq("id", product.id);
+
+    if (product.status === "published") {
+      try {
+        await indexProductEmbedding(product.id);
+      } catch (indexErr) {
+        console.error("Auto-index error:", indexErr);
+      }
+    }
 
     return jsonResponse(
       {

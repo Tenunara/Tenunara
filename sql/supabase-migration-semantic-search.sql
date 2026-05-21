@@ -75,21 +75,21 @@ LANGUAGE plpgsql AS $$
 BEGIN
   RETURN QUERY
   SELECT
-    p.id                                          AS product_id,
-    p.umkm_id,
-    u.nama_toko,
-    ft.name                                       AS fabric_type_name,
-    p.final_grade,
-    p.total_weight_kg,
-    p.price_per_kg,
-    p.minimum_order_kg,
-    p.ai_dominant_color,
-    p.ai_size_range,
-    p.ai_pattern,
-    u.kota,
-    p.is_negotiable,
-    (1 - (p.search_embedding <=> query_embedding))::FLOAT  AS semantic_score,
-    CASE WHEN u.kota = p_kota_pengrajin THEN 0.1 ELSE 0.0 END AS geo_boost
+    p.id::UUID                                    AS product_id,
+    p.umkm_id::UUID                               AS umkm_id,
+    u.nama_toko::TEXT                             AS nama_toko,
+    ft.name::TEXT                                 AS fabric_type_name,
+    p.final_grade::CHAR(1)                        AS final_grade,
+    p.total_weight_kg::NUMERIC                    AS total_weight_kg,
+    p.price_per_kg::NUMERIC                       AS price_per_kg,
+    p.minimum_order_kg::NUMERIC                   AS minimum_order_kg,
+    p.ai_dominant_color::VARCHAR                  AS ai_dominant_color,
+    p.ai_size_range::TEXT                         AS ai_size_range,
+    p.ai_pattern::TEXT                            AS ai_pattern,
+    u.kota::TEXT                                  AS kota,
+    p.is_negotiable::BOOLEAN                      AS is_negotiable,
+    (1 - (p.search_embedding <=> query_embedding))::FLOAT AS semantic_score,
+    CASE WHEN u.kota = p_kota_pengrajin THEN 0.1 ELSE 0.0 END::FLOAT AS geo_boost
   FROM products p
   JOIN umkm u  ON p.umkm_id = u.id
   JOIN fabric_types ft ON p.fabric_type_id = ft.id

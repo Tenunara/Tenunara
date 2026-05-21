@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { Inter, Playfair_Display, DM_Sans } from "next/font/google"
 import "./globals.css"
 
 const inter = Inter({
@@ -7,7 +7,18 @@ const inter = Inter({
   subsets: ["latin"],
 })
 
-// TODO: Update metadata when official brand assets and description are finalized
+const playfair = Playfair_Display({
+  variable: "--font-heading",
+  subsets: ["latin"],
+  display: "swap",
+})
+
+const dmSans = DM_Sans({
+  variable: "--font-body",
+  subsets: ["latin"],
+  display: "swap",
+})
+
 export const metadata: Metadata = {
   title: "TENUNARA — Ekonomi Sirkular untuk Limbah Tekstil Indonesia",
   description:
@@ -20,8 +31,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="id" className={`${inter.variable} h-full antialiased`}>
-      <body className="min-h-full">{children}</body>
+    <html
+      lang="id"
+      className={`${inter.variable} ${playfair.variable} ${dmSans.variable} h-full antialiased`}
+    >
+      <body className="min-h-full font-body">{children}</body>
     </html>
   )
 }
