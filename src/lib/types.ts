@@ -600,3 +600,78 @@ export interface ParsedQuery {
   grade?: string | null;
   search_text: string;
 }
+
+// ============================================================
+// UMKM DASHBOARD TYPES
+// ============================================================
+
+export type SkalaUsaha = "mikro" | "kecil" | "menengah"
+export type VerificationStatus = "menunggu_penjemputan" | "dalam_perjalanan" | "terverifikasi_match" | "dibatalkan" | "sengketa"
+
+export interface DashboardProfile {
+  id: string
+  nama_penjual: string
+  nama_toko: string
+  email: string
+  nomor_telepon: string
+  foto_profil_url: string | null
+  npwp_nib: string | null
+  skala_usaha: SkalaUsaha | null
+  kota: string
+  kabupaten: string
+  alamat: string
+}
+
+export interface DashboardMetrics {
+  total_waste_generated_kg: number
+  total_waste_diverted_kg: number
+  landfill_diversion_rate: number
+  waste_to_disposal_kg: number
+}
+
+export interface DashboardDistribution {
+  upcycle_volume_kg: number
+  recycle_volume_kg: number
+  active_partner_count: number
+}
+
+export interface DashboardImpact {
+  co2e_avoided_kg: number
+  local_economic_multiplier: number
+}
+
+export interface DashboardTrend {
+  month: string
+  waste_generated_kg: number
+  waste_diverted_kg: number
+}
+
+export interface DashboardTransaction {
+  transaction_id: string
+  timestamp: string
+  material_type: string
+  grade: string
+  weight_kg: number
+  price_per_kg: number
+  subtotal: number
+  receiver_name: string
+  receiver_id: string
+  verification_status: VerificationStatus
+  hash_code: string
+  order_id: string
+  order_number: string
+}
+
+export interface DashboardGovernance {
+  auditor_log: string
+}
+
+export interface UmkmDashboardResponse {
+  profile: DashboardProfile
+  metrics: DashboardMetrics
+  distribution: DashboardDistribution
+  impact: DashboardImpact
+  trend: DashboardTrend[]
+  transactions: DashboardTransaction[]
+  governance: DashboardGovernance
+}
