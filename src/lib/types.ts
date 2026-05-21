@@ -76,6 +76,13 @@ export interface AuthResponse {
 // ENUMS (continued)
 // ============================================================
 export type UserRole = "seller" | "buyer" | "pengrajin" | "umkm"
+export type ProductionSource = "sisa_pola" | "cacat_maklun" | "akhir_roll"
+export type HygieneStatus = "clean_washed" | "clean_fresh_cut" | "dusty"
+export type FabricCategory = "natural" | "synthetic" | "blend"
+export type AiPattern = "polos" | "motif" | "batik" | "stripes" | "checked" | "other"
+export type AiSizeRange = "lt15cm" | "15-30cm" | "30-50cm" | "gt50cm"
+export type DefectType = "noda" | "sobek" | "lubang" | "warna_pudar" | "cacat_tenun"
+export type ProductStatus = "draft" | "pending_review" | "published" | "sold" | "dispute" | "archived"
 export type Material = "denim" | "cotton" | "polyester" | "mixed" | "other"
 export type Color =
   | "blue"
@@ -188,6 +195,114 @@ export interface SingleResponse<T> {
 export interface ErrorResponse {
   error: string
   details?: string
+}
+
+// ============================================================
+// PRODUCT TYPES
+// ============================================================
+export interface FabricType {
+  id: number
+  name: string
+  category: FabricCategory
+  common_uses: string | null
+}
+
+export interface ProductRow {
+  id: string
+  umkm_id: string
+  fabric_type_id: number
+  fiber_composition: string | null
+  images_url: string[]
+  production_source: ProductionSource
+  hygiene_status: HygieneStatus
+  has_odor: boolean
+  total_weight_kg: number
+  estimated_pieces: number | null
+  price_per_kg: number
+  is_negotiable: boolean
+  minimum_order_kg: number | null
+  notes: string | null
+  ai_dominant_color: string | null
+  ai_pattern: AiPattern | null
+  ai_size_range: AiSizeRange | null
+  ai_confidence_score: number | null
+  ai_suggested_grade: Grade | null
+  ai_model_version: string | null
+  ai_processed_at: string | null
+  final_grade: Grade | null
+  is_grade_overridden: boolean
+  status: ProductStatus
+  created_at: string
+  updated_at: string
+}
+
+export interface ProductDefectDetail {
+  id: number
+  product_id: string
+  defect_type: DefectType
+  defect_percentage: number
+  confidence_score: number
+  detected_at: string
+}
+
+export interface ProductWithFabric extends ProductRow {
+  fabric_name: string
+  fabric_category: FabricCategory
+  umkm_name: string
+  umkm_kota: string
+  defects: ProductDefectDetail[]
+}
+
+export interface CreateProductRequest {
+  fabric_type_id: number
+  fiber_composition?: string
+  production_source: ProductionSource
+  hygiene_status: HygieneStatus
+  has_odor?: boolean
+  total_weight_kg: number
+  estimated_pieces?: number
+  price_per_kg: number
+  is_negotiable?: boolean
+  minimum_order_kg?: number
+  notes?: string
+  status?: ProductStatus
+  // Overridable AI fields
+  final_grade?: Grade
+  // Images as base64 strings (min 1, max 5)
+  images_base64: string[]
+}
+
+export interface UpdateProductRequest {
+  fabric_type_id?: number
+  fiber_composition?: string
+  production_source?: ProductionSource
+  hygiene_status?: HygieneStatus
+  has_odor?: boolean
+  total_weight_kg?: number
+  estimated_pieces?: number
+  price_per_kg?: number
+  is_negotiable?: boolean
+  minimum_order_kg?: number
+  notes?: string
+  status?: ProductStatus
+  final_grade?: Grade
+  is_grade_overridden?: boolean
+}
+
+export interface AIAnalysisResult {
+  images_url: string[]
+  ai_dominant_color: string
+  ai_pattern: AiPattern
+  ai_size_range: AiSizeRange
+  ai_confidence_score: number
+  ai_suggested_grade: Grade
+  ai_model_version: string
+  ai_processed_at: string
+  defects: {
+    defect_type: DefectType
+    defect_percentage: number
+    confidence_score: number
+  }[]
 }
 
 export interface AnalysisResult {
