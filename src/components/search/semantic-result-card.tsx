@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Package } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { GradeBadge } from "@/components/listing/grade-badge";
@@ -47,6 +48,7 @@ export function SemanticResultCard({ result, onClick }: SemanticResultCardProps)
   const [imgLoading, setImgLoading] = useState(true);
 
   const matchPercent = Math.min(Math.round(result.final_score * 100), 100);
+  const firstImage = result.images_url?.[0];
 
   return (
     <button
@@ -58,22 +60,26 @@ export function SemanticResultCard({ result, onClick }: SemanticResultCardProps)
         {imgLoading && !imgError && (
           <div className="absolute inset-0 animate-pulse bg-tenunara-teal/10" />
         )}
-        {imgError ? (
+        {imgError || !firstImage ? (
           <div className="flex h-full items-center justify-center">
             <Package className="h-8 w-8 text-tenunara-teal/30" />
           </div>
         ) : (
-          <div
+          <Image
+            src={firstImage}
+            alt={result.fabric_type_name}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             className={cn(
-              "flex h-full w-full items-center justify-center transition-opacity duration-300",
+              "object-cover transition-opacity duration-300",
               imgLoading ? "opacity-0" : "opacity-100",
             )}
-          >
-            <div className="flex flex-col items-center gap-2 text-tenunara-teal/30">
-              <Package className="h-12 w-12" />
-              <span className="text-[10px] font-medium">{result.fabric_type_name}</span>
-            </div>
-          </div>
+            onLoad={() => setImgLoading(false)}
+            onError={() => {
+              setImgError(true);
+              setImgLoading(false);
+            }}
+          />
         )}
 
         {/* Grade badge */}

@@ -87,7 +87,7 @@ export async function PUT(
     // Verify ownership
     const { data: existing, error: fetchError } = await supabaseAdmin
       .from("products")
-      .select("id, umkm_id, status, ai_suggested_grade, is_grade_overridden")
+      .select("id, umkm_id, status, ai_suggested_grade, is_grade_overridden, search_embedding")
       .eq("id", id)
       .single();
 
@@ -135,7 +135,7 @@ export async function PUT(
     const updatedFields = Object.keys(updates) as (keyof UpdateProductRequest)[];
     const hasEmbeddingChanges = updatedFields.some((field) => EMBEDDING_FIELDS.has(field));
     const statusChangedToPublished = updates.status === "published" && existing.status !== "published";
-    const shouldIndex = updated.status === "published" && (statusChangedToPublished || hasEmbeddingChanges);
+    const shouldIndex = updated.status === "published" && (statusChangedToPublished || hasEmbeddingChanges || !existing.search_embedding);
 
     if (shouldIndex) {
       try {

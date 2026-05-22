@@ -195,12 +195,11 @@ export async function POST(request: Request) {
       })
       .eq("id", product.id);
 
-    if (product.status === "published") {
-      try {
-        await indexProductEmbedding(product.id);
-      } catch (indexErr) {
-        console.error("Auto-index error:", indexErr);
-      }
+    // 6. Generate indexing search embedding untuk semantic search
+    try {
+      await indexProductEmbedding(product.id);
+    } catch (indexErr) {
+      console.error("Auto-index error:", indexErr);
     }
 
     return jsonResponse(

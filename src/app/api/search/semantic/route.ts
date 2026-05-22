@@ -119,6 +119,16 @@ function calculatePriceScore(
 function rerankResults(candidates: Record<string, unknown>[], parsed: Record<string, unknown>) {
   const allPrices = candidates.map((c) => Number(c.price_per_kg) || 0);
 
+  // Build a lookup for images_url from enriched candidates
+  const imageMap = new Map<string, string[]>();
+  for (const c of candidates) {
+    const pid = String(c.product_id ?? "");
+    const raw = c.images_url;
+    if (raw) {
+      imageMap.set(pid, Array.isArray(raw) ? (raw as string[]) : [String(raw)]);
+    }
+  }
+
   return candidates
     .map((c) => {
       const semanticScore = Number(c.semantic_score) || 0;
@@ -142,6 +152,7 @@ function rerankResults(candidates: Record<string, unknown>[], parsed: Record<str
         ai_dominant_color: String(c.ai_dominant_color ?? ""),
         ai_size_range:     String(c.ai_size_range ?? ""),
         ai_pattern:        String(c.ai_pattern ?? ""),
+        images_url:        imageMap.get(String(c.product_id ?? "")) ?? [],
         kota:              String(c.kota ?? ""),
         kabupaten:         String(c.kabupaten ?? ""),
         is_negotiable:     Boolean(c.is_negotiable),
@@ -226,10 +237,31 @@ export async function POST(request: NextRequest) {
       return errorResponse("Pencarian gagal", 500, rpcError.message);
     }
 
-    // ── 5. Re-ranking ───────────────────────────────────────────────
-    const results = rerankResults((candidates ?? []) as Record<string, unknown>[], parsed);
+    // ── 5. Enrich with images ───────────────────────────────────────
+    const candidateIds = (candidates ?? []).map((c) => c.product_id).filter(Boolean);
+    let imageMap = new Map<string, string[]>();
+    if (candidateIds.length > 0) {
+      try {
+        const { data: productsWithImages } = await supabaseAdmin
+          .from("products")
+          .select("id, images_url")
+          .in("id", candidateIds);
+        for (const p of productsWithImages ?? []) {
+          imageMap.set(p.id, (p.images_url as string[]) ?? []);
+        }
+      } catch (imgErr) {
+        console.error("fetch-images error:", imgErr);
+      }
+    }
+    const enrichedCandidates = (candidates ?? []).map((c: Record<string, unknown>) => ({
+      ...c,
+      images_url: imageMap.get(String(c.product_id ?? "")) ?? [],
+    }));
 
-    // ── 6. Save to cache ────────────────────────────────────────────
+    // ── 6. Re-ranking ───────────────────────────────────────────────
+    const results = rerankResults(enrichedCandidates, parsed);
+
+    // ── 7. Save to cache ────────────────────────────────────────────
     try {
       await supabaseAdmin.from("match_cache").upsert({
         cache_key: cacheKey,
@@ -241,7 +273,7 @@ export async function POST(request: NextRequest) {
       console.error("Cache write error:", cacheErr);
     }
 
-    // ── 7. Log query for analytics ──────────────────────────────────
+    // ── 8. Log query for analytics ──────────────────────────────────
     try {
       await supabaseAdmin.from("search_queries").insert({
         pengrajin_id:  pengrajin_id ?? null,

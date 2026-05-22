@@ -632,6 +632,7 @@ export interface SemanticSearchResult {
   ai_dominant_color: string;
   ai_size_range:     string;
   ai_pattern:        string;
+  images_url:        string[];
   kota:              string;
   kabupaten:         string;
   is_negotiable:     boolean;
