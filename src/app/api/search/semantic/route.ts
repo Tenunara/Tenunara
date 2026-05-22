@@ -238,7 +238,10 @@ export async function POST(request: NextRequest) {
     }
 
     // ── 5. Enrich with images ───────────────────────────────────────
-    const candidateIds = (candidates ?? []).map((c) => c.product_id).filter(Boolean);
+    const typedCandidates = (candidates ?? []) as Array<{ product_id?: string | null }>;
+    const candidateIds = typedCandidates
+      .map((c) => c.product_id)
+      .filter((productId): productId is string => Boolean(productId));
     let imageMap = new Map<string, string[]>();
     if (candidateIds.length > 0) {
       try {
