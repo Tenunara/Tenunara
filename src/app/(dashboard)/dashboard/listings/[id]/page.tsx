@@ -42,7 +42,6 @@ import {
   GRADE_TEXT,
 } from "@/lib/constants";
 import { deleteProduct, createOrder } from "@/lib/api";
-import { useCart } from "@/contexts/cart-context"
 import type {
   ProductRow,
   ProductDefectDetail,
@@ -133,12 +132,10 @@ export default function ListingDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const [deleting, setDeleting] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [showAdded, setShowAdded] = useState(false);
   const [activeTab, setActiveTab] = useState<"deskripsi" | "spesifikasi" | "cacat" | "analisis">("deskripsi");
   const [descExpanded, setDescExpanded] = useState(false);
   const [zoomed, setZoomed] = useState(false);
   const galleryRef = useRef<HTMLDivElement>(null);
-  const { addItem } = useCart();
 
   // Read current user info
   const currentUserId =
@@ -220,16 +217,10 @@ export default function ListingDetailPage() {
     }
   }, [id, quantity, router]);
 
-  const handleAddToCart = useCallback(async () => {
-    if (!id || !quantity) return;
-    try {
-      await addItem(id, quantity);
-      setShowAdded(true);
-      setTimeout(() => setShowAdded(false), 2000);
-    } catch (err: any) {
-      alert(err.message);
-    }
-  }, [id, quantity, addItem]);
+  const handleAddToCart = useCallback(() => {
+    // Future: cart implementation
+    handleOrder();
+  }, [handleOrder]);
 
   // ── Loading ──
   if (loading) return <Skeleton />;
@@ -674,20 +665,11 @@ export default function ListingDetailPage() {
                 <div className="mt-4 flex gap-3">
                   <Button
                     onClick={handleAddToCart}
-                    disabled={showAdded || (product.minimum_order_kg ? quantity < product.minimum_order_kg : false)}
-                    className={cn(
-                      "flex flex-1 items-center justify-center gap-2 rounded-xl border-2 px-5 py-3 text-sm font-bold transition-all disabled:opacity-50",
-                      showAdded
-                        ? "border-grade-success bg-grade-success/10 text-grade-success"
-                        : "border-tenunara-terracotta bg-white text-tenunara-terracotta hover:bg-tenunara-terracotta/5",
-                    )}
+                    disabled={creating || (product.minimum_order_kg ? quantity < product.minimum_order_kg : false)}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-tenunara-terracotta bg-white px-5 py-3 text-sm font-bold text-tenunara-terracotta transition-all hover:bg-tenunara-terracotta/5 disabled:opacity-50"
                   >
-                    {showAdded ? (
-                      <CheckCircle2 className="h-4 w-4" />
-                    ) : (
-                      <ShoppingCart className="h-4 w-4" />
-                    )}
-                    {showAdded ? "Ditambahkan!" : "Keranjang"}
+                    <ShoppingCart className="h-4 w-4" />
+                    Keranjang
                   </Button>
                   <Button
                     onClick={handleOrder}

@@ -5,8 +5,6 @@ import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { Bell, ShoppingCart, Menu, Search, LogOut, LayoutDashboard, Sparkles } from "lucide-react"
-import { CartSheet } from "@/components/cart/cart-sheet"
-import { useCartSafe } from "@/contexts/cart-context"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -27,24 +25,6 @@ import type { Profile } from "@/lib/types"
 
 const LOGO_SRC = "/images/logo.png"
 
-function CartIconBtn() {
-  const ctx = useCartSafe();
-  const itemsCount = ctx?.itemsCount ?? 0;
-
-  return (
-    <CartSheet>
-      <button className="relative flex h-9 w-9 items-center justify-center rounded-full text-tenunara-teal transition-colors hover:bg-tenunara-mint hover:text-tenunara-charcoal">
-        <ShoppingCart className="h-5 w-5" />
-        {itemsCount > 0 && (
-          <span className="absolute right-1.5 top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-tenunara-terracotta px-1 text-[8px] font-bold text-white">
-            {itemsCount > 99 ? "99+" : itemsCount}
-          </span>
-        )}
-      </button>
-    </CartSheet>
-  );
-}
-
 interface MarketplaceHeaderProps {
   user: Profile | null
   onLogout: () => Promise<void>
@@ -54,6 +34,7 @@ export function MarketplaceHeader({ user, onLogout }: MarketplaceHeaderProps) {
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
@@ -190,7 +171,10 @@ export function MarketplaceHeader({ user, onLogout }: MarketplaceHeaderProps) {
               <Bell className="h-5 w-5" />
               <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-tenunara-terracotta text-[8px] font-bold text-white">3</span>
             </button>
-            <CartIconBtn />
+            <button className="relative flex h-9 w-9 items-center justify-center rounded-full text-tenunara-teal transition-colors hover:bg-tenunara-mint hover:text-tenunara-charcoal">
+              <ShoppingCart className="h-5 w-5" />
+              <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-tenunara-terracotta text-[8px] font-bold text-white">2</span>
+            </button>
 
             <DropdownMenu>
               <DropdownMenuTrigger
